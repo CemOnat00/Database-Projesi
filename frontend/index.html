@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeri Projesi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        nav {
+            background: #2c3e50;
+            padding: 15px 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        nav span {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            margin-right: auto;
+        }
+
+        nav button {
+            background: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        nav button:hover { background: white; color: #2c3e50; }
+
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .sayfa { display: none; }
+        .sayfa.aktif { display: block; }
+
+        .kart-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .kart {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .kart h3 { color: #2c3e50; margin-bottom: 10px; }
+        .kart p { color: #666; font-size: 14px; margin-bottom: 5px; }
+        .kart .fiyat { color: #e74c3c; font-weight: bold; font-size: 18px; }
+
+        .form-kutu {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-kutu h2 { margin-bottom: 20px; color: #2c3e50; }
+
+        .form-grup {
+            margin-bottom: 15px;
+        }
+
+        .form-grup label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-grup input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .btn:hover { background: #34495e; }
+
+        .mesaj {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .mesaj.basari { background: #d4edda; color: #155724; display: block; }
+        .mesaj.hata { background: #f8d7da; color: #721c24; display: block; }
+
+        h2 { color: #2c3e50; margin-bottom: 10px; }
+
+        .yukluyor { text-align: center; color: #666; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span>🎨 Galeri</span>
+    <button onclick="sayfaGit('eserler')">Eserler</button>
+    <button onclick="sayfaGit('etkinlikler')">Etkinlikler</button>
+    <button onclick="sayfaGit('kayit')">Kayıt Ol</button>
+    <button onclick="sayfaGit('giris')">Giriş Yap</button>
+</nav>
+
+<div class="container">
+
+    <!-- Ana Sayfa -->
+    <div id="anasayfa" class="sayfa aktif">
+        <br>
+        <h2>Hoş Geldiniz!</h2>
+        <p>Galeri projesine hoş geldiniz. Yukarıdaki menüden gezinebilirsiniz.</p>
+    </div>
+
+    <!-- Eserler -->
+    <div id="eserler" class="sayfa">
+        <br>
+        <h2>Eserler</h2>
+        <div id="eserler-liste" class="kart-grid">
+            <div class="yukluyor">Yükleniyor...</div>
+        </div>
+    </div>
+
+    <!-- Etkinlikler -->
+    <div id="etkinlikler" class="sayfa">
+        <br>
+        <h2>Etkinlikler</h2>
+        <div id="etkinlikler-liste" class="kart-grid">
+            <div class="yukluyor">Yükleniyor...</div>
+        </div>
+    </div>
+
+    <!-- Kayıt -->
+    <div id="kayit" class="sayfa">
+        <br>
+        <div class="form-kutu">
+            <h2>Kayıt Ol</h2>
+            <div class="form-grup">
+                <label>Ad Soyad</label>
+                <input type="text" id="kayit-adsoyad" placeholder="Adınız Soyadınız">
+            </div>
+            <div class="form-grup">
+                <label>Email</label>
+                <input type="email" id="kayit-email" placeholder="email@example.com">
+            </div>
+            <div class="form-grup">
+                <label>Şifre</label>
+                <input type="password" id="kayit-sifre" placeholder="En az 6 karakter">
+            </div>
+            <button class="btn" onclick="kayitOl()">Kayıt Ol</button>
+            <div id="kayit-mesaj" class="mesaj"></div>
+        </div>
+    </div>
+
+    <!-- Giriş -->
+    <div id="giris" class="sayfa">
+        <br>
+        <div class="form-kutu">
+            <h2>Giriş Yap</h2>
+            <div class="form-grup">
+                <label>Email</label>
+                <input type="email" id="giris-email" placeholder="email@example.com">
+            </div>
+            <div class="form-grup">
+                <label>Şifre</label>
+                <input type="password" id="giris-sifre" placeholder="Şifreniz">
+            </div>
+            <button class="btn" onclick="girisYap()">Giriş Yap</button>
+            <div id="giris-mesaj" class="mesaj"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const API = 'http://localhost:8080/api/v1';
+
+    // Sayfa geçişi
+    function sayfaGit(id) {
+        document.querySelectorAll('.sayfa').forEach(s => s.classList.remove('aktif'));
+        document.getElementById(id).classList.add('aktif');
+
+        if (id === 'eserler') eserleriGetir();
+        if (id === 'etkinlikler') etkinlikleriGetir();
+    }
+
+    // Eserler
+    async function eserleriGetir() {
+        const liste = document.getElementById('eserler-liste');
+        liste.innerHTML = '<div class="yukluyor">Yükleniyor...</div>';
+
+        try {
+            const res = await fetch(`${API}/eserler`);
+            const data = await res.json();
+
+            if (data.data && data.data.eserler && data.data.eserler.length > 0) {
+                liste.innerHTML = data.data.eserler.map(e => `
+                    <div class="kart">
+                        <h3>${e.baslik}</h3>
+                        <p>Sanatçı: ${e.sanatci.ad_soyad}</p>
+                        <p>Kategori: ${e.kategori}</p>
+                        <p class="fiyat">${e.fiyat} ₺</p>
+                    </div>
+                `).join('');
+            } else {
+                liste.innerHTML = '<p>Henüz eser yok.</p>';
+            }
+        } catch (err) {
+            liste.innerHTML = '<p>Bağlantı hatası.</p>';
+        }
+    }
+
+    // Etkinlikler
+    async function etkinlikleriGetir() {
+        const liste = document.getElementById('etkinlikler-liste');
+        liste.innerHTML = '<div class="yukluyor">Yükleniyor...</div>';
+
+        try {
+            const res = await fetch(`${API}/etkinlikler`);
+            const data = await res.json();
+
+            if (data.data && data.data.etkinlikler && data.data.etkinlikler.length > 0) {
+                liste.innerHTML = data.data.etkinlikler.map(e => `
+                    <div class="kart">
+                        <h3>${e.baslik}</h3>
+                        <p>Tarih: ${new Date(e.etkinlik_tarihi).toLocaleDateString('tr-TR')}</p>
+                        <p>Kontenjan: ${e.kontenjan}</p>
+                        <p class="fiyat">${e.ucret} ₺</p>
+                    </div>
+                `).join('');
+            } else {
+                liste.innerHTML = '<p>Henüz etkinlik yok.</p>';
+            }
+        } catch (err) {
+            liste.innerHTML = '<p>Bağlantı hatası.</p>';
+        }
+    }
+
+    // Kayıt ol
+    async function kayitOl() {
+        const mesaj = document.getElementById('kayit-mesaj');
+        const adSoyad = document.getElementById('kayit-adsoyad').value;
+        const email = document.getElementById('kayit-email').value;
+        const sifre = document.getElementById('kayit-sifre').value;
+
+        try {
+            const res = await fetch(`${API}/auth/kayit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ad_soyad: adSoyad, email, sifre })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                mesaj.className = 'mesaj basari';
+                mesaj.textContent = 'Kayıt başarılı! Giriş yapabilirsiniz.';
+                localStorage.setItem('token', data.data.token);
+            } else {
+                mesaj.className = 'mesaj hata';
+                mesaj.textContent = data.error || 'Bir hata oluştu.';
+            }
+        } catch (err) {
+            mesaj.className = 'mesaj hata';
+            mesaj.textContent = 'Sunucuya bağlanılamadı.';
+        }
+    }
+
+    // Giriş yap
+    async function girisYap() {
+        const mesaj = document.getElementById('giris-mesaj');
+        const email = document.getElementById('giris-email').value;
+        const sifre = document.getElementById('giris-sifre').value;
+
+        try {
+            const res = await fetch(`${API}/auth/giris`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, sifre })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                mesaj.className = 'mesaj basari';
+                mesaj.textContent = `Hoş geldiniz, ${data.data.kullanici.ad_soyad}!`;
+                localStorage.setItem('token', data.data.token);
+            } else {
+                mesaj.className = 'mesaj hata';
+                mesaj.textContent = data.error || 'Email veya şifre yanlış.';
+            }
+        } catch (err) {
+            mesaj.className = 'mesaj hata';
+            mesaj.textContent = 'Sunucuya bağlanılamadı.';
+        }
+    }
+</script>
+
+</body>
+</html>
