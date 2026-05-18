@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workshops &amp; Events — The Curated Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-active="workshops" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-16">
+
+    <header class="grid lg:grid-cols-2 gap-12 mb-16 items-end">
+      <div>
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-4">Atelier Programme</p>
+        <h1 class="font-display text-5xl md:text-7xl text-ink-strong leading-none">Masterclasses<br/><span class="italic">&amp; Events</span></h1>
+        <p class="mt-6 text-ink-muted text-lg max-w-xl">
+          Small-group sessions led by exhibiting artists in our 2nd-floor atelier. Painting,
+          sculpture, generative art and quiet evenings with the curator.
+        </p>
+      </div>
+      <div class="flex flex-col gap-6">
+        <div class="flex border border-line w-fit">
+          <button id="view-list" class="px-5 py-3 bg-brand text-white text-[11px] uppercase tracking-lux">List</button>
+          <button id="view-calendar" class="px-5 py-3 text-ink-strong text-[11px] uppercase tracking-lux hover:bg-bg-soft">Calendar</button>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <select id="flt-medium" class="border border-line px-4 py-3 text-[11px] uppercase tracking-lux text-ink-strong bg-transparent focus:outline-none focus:border-brand">
+            <option value="all">All Mediums</option><option value="painting">Painting</option><option value="sculpture">Sculpture</option><option value="digital">Digital</option><option value="talk">Talk</option>
+          </select>
+          <select id="flt-level" class="border border-line px-4 py-3 text-[11px] uppercase tracking-lux text-ink-strong bg-transparent focus:outline-none focus:border-brand">
+            <option value="all">Any Level</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="masterclass">Masterclass</option>
+          </select>
+          <select id="flt-date" class="border border-line px-4 py-3 text-[11px] uppercase tracking-lux text-ink-strong bg-transparent focus:outline-none focus:border-brand">
+            <option value="all">Any Date</option><option value="thismonth">This Month</option><option value="nextmonth">Next Month</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="compare-go" class="text-[11px] uppercase tracking-lux text-ink-strong border-b border-ink-strong pb-1">Compare Selected</button>
+          <span id="compare-count" class="text-[11px] uppercase tracking-lux text-ink-muted">(0)</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex justify-between items-center mb-10">
+      <p id="result-count" class="text-[11px] uppercase tracking-lux text-ink-muted">Loading…</p>
+    </div>
+
+    <div id="workshops-grid" class="grid grid-cols-1 md:grid-cols-12 gap-y-20 md:gap-x-8 lg:gap-x-12"></div>
+
+    <div id="empty-state" class="hidden text-center py-24">
+      <p class="font-display italic text-3xl text-ink-muted">No sessions match these filters.</p>
+      <p class="mt-3 text-sm text-ink-muted">Try widening the date range, or clearing the level filter.</p>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/pages/workshops.js"></script>
+</body>
+</html>

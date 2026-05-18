@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery — The Curated Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-active="gallery" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-16">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div>
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">The Collection</p>
+        <h1 class="font-display text-5xl md:text-6xl text-ink-strong leading-none">Artworks <span class="italic">in residence</span></h1>
+        <p class="mt-4 text-ink-muted max-w-xl">A rotating selection of paintings, sculpture, photography and works on paper. Each piece is curated and authenticated by the gallery.</p>
+      </div>
+      <div class="flex gap-3">
+        <a href="compare.html" class="border border-ink-strong/30 px-6 py-3 text-[11px] uppercase tracking-lux text-ink-strong hover:bg-ink-strong hover:text-white transition-colors">Compare Tool</a>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <section class="bg-surface border border-line p-6 mb-12 flex flex-wrap gap-6 items-end">
+      <div class="flex-1 min-w-[200px]">
+        <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Search</label>
+        <input id="flt-search" type="text" placeholder="Title, artist, medium…" class="w-full border-b border-line pb-2 focus:outline-none focus:border-brand bg-transparent" />
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Medium</label>
+        <select id="flt-medium" class="border-b border-line pb-2 bg-transparent focus:outline-none focus:border-brand text-sm">
+          <option value="all">All Mediums</option>
+          <option value="painting">Painting</option>
+          <option value="photography">Photography</option>
+          <option value="sculpture">Sculpture</option>
+          <option value="digital">Digital</option>
+          <option value="print">Print</option>
+          <option value="drawing">Drawing</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Price</label>
+        <select id="flt-price" class="border-b border-line pb-2 bg-transparent focus:outline-none focus:border-brand text-sm">
+          <option value="all">Any Price</option>
+          <option value="under1k">Under $1,000</option>
+          <option value="1k-3k">$1,000 – $3,000</option>
+          <option value="3k-10k">$3,000 – $10,000</option>
+          <option value="over10k">Above $10,000</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Sort</label>
+        <select id="flt-sort" class="border-b border-line pb-2 bg-transparent focus:outline-none focus:border-brand text-sm">
+          <option value="curators">Curator's Choice</option>
+          <option value="newest">Newest First</option>
+          <option value="asc">Price · Low to High</option>
+          <option value="desc">Price · High to Low</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- GRID -->
+    <section id="artworks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16"></section>
+
+    <div id="empty-state" class="hidden text-center py-20">
+      <p class="font-display italic text-2xl text-ink-muted">No works match your filters.</p>
+      <p class="mt-2 text-sm text-ink-muted">Try clearing your search or browsing a different medium.</p>
+    </div>
+
+    <div class="flex justify-center mt-16">
+      <button class="border border-ink-strong/30 px-12 py-4 text-[11px] uppercase tracking-lux text-ink-strong hover:bg-ink-strong hover:text-white transition-colors">Load More Works</button>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/pages/gallery.js"></script>
+</body>
+</html>

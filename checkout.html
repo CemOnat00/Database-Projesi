@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout — The Curated Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-nav="slim" data-slim-middle='<div class="flex items-center gap-6 text-[11px] uppercase tracking-lux"><span class="text-ink-muted">Cart</span><span class="text-ink-muted">›</span><span class="text-ink-strong border-b border-ink-strong pb-0.5">Checkout</span><span class="text-ink-muted">›</span><span class="text-ink-muted">Confirmation</span></div>' class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+    <h1 class="font-display text-5xl text-ink-strong mb-12">Checkout</h1>
+
+    <!-- EMPTY CART STATE -->
+    <div id="empty-cart" class="hidden bg-surface border border-line border-dashed py-20 px-6 text-center mb-12">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#5a4a42" stroke-width="1.25" class="mx-auto mb-5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <p class="font-display italic text-2xl text-ink-strong">Your cart is empty.</p>
+      <p class="mt-3 text-sm text-ink-muted max-w-md mx-auto">Add a work from the gallery or reserve a workshop seat to begin checkout.</p>
+      <div class="mt-8 flex justify-center gap-3">
+        <a href="gallery.html" class="bg-brand hover:bg-brand-hover text-white px-8 py-4 text-[11px] uppercase tracking-lux transition-colors">Browse Gallery</a>
+        <a href="workshops.html" class="border border-ink-strong/30 px-8 py-4 text-[11px] uppercase tracking-lux text-ink-strong hover:bg-ink-strong hover:text-white transition-colors">See Workshops</a>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-12">
+
+      <form id="checkout-form" class="lg:col-span-2 space-y-12">
+
+        <section>
+          <h2 class="font-display text-2xl text-ink-strong mb-6">Contact</h2>
+          <div class="grid md:grid-cols-2 gap-5">
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Email</label><input type="email" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Phone</label><input type="tel" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="font-display text-2xl text-ink-strong mb-6">Shipping Address</h2>
+          <div class="grid md:grid-cols-2 gap-5">
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">First Name</label><input type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Last Name</label><input type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div class="md:col-span-2"><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Street Address</label><input type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">City</label><input type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Postal Code</label><input type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Country</label>
+              <select required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand"><option>Türkiye</option><option>United Kingdom</option><option>Germany</option><option>France</option><option>United States</option></select>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="font-display text-2xl text-ink-strong mb-6">Payment Method</h2>
+          <div class="space-y-3 mb-6">
+            <label class="flex items-center gap-3 border border-line p-4 cursor-pointer has-[:checked]:border-brand has-[:checked]:bg-surface">
+              <input type="radio" name="pay" value="card" checked class="accent-brand" />
+              <span class="text-[11px] uppercase tracking-lux text-ink-strong flex-1">Credit / Debit Card</span>
+              <span class="text-[10px] uppercase tracking-lux text-ink-muted">Visa · Mastercard · Amex</span>
+            </label>
+            <label class="flex items-center gap-3 border border-line p-4 cursor-pointer has-[:checked]:border-brand has-[:checked]:bg-surface">
+              <input type="radio" name="pay" value="paypal" class="accent-brand" />
+              <span class="text-[11px] uppercase tracking-lux text-ink-strong">PayPal</span>
+            </label>
+            <label class="flex items-center gap-3 border border-line p-4 cursor-pointer has-[:checked]:border-brand has-[:checked]:bg-surface">
+              <input type="radio" name="pay" value="bank" class="accent-brand" />
+              <span class="text-[11px] uppercase tracking-lux text-ink-strong">Bank Transfer (Havale / EFT)</span>
+            </label>
+          </div>
+
+          <div id="card-fields" class="grid md:grid-cols-2 gap-5 bg-surface border border-line p-6">
+            <div class="md:col-span-2"><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Card Number</label><input type="text" placeholder="1234 5678 9012 3456" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Expiration</label><input type="text" placeholder="MM / YY" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">CVC</label><input type="text" placeholder="•••" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+          </div>
+
+          <div id="paypal-notice" class="hidden bg-surface border border-line p-6 text-sm text-ink-muted">
+            <p class="font-display italic text-ink-strong mb-2">PayPal checkout</p>
+            <p>On placing the order you will be redirected to PayPal to authorise the payment. No card details are stored by The Curated Gallery.</p>
+          </div>
+
+          <div id="bank-notice" class="hidden bg-surface border border-line p-6 text-sm text-ink-muted">
+            <p class="font-display italic text-ink-strong mb-2">Bank Transfer (Havale / EFT)</p>
+            <p>You will receive our IBAN by email upon placing the order. The curator will hold your works for 5 business days while we await the transfer.</p>
+          </div>
+        </section>
+
+        <button type="submit" id="place-order" class="group w-full bg-brand hover:bg-brand-hover text-white py-5 text-[11px] uppercase tracking-lux flex items-center justify-center gap-3 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          Place Order
+          <svg width="18" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+
+      <aside class="lg:col-span-1">
+        <div class="bg-surface border border-line p-7 lg:sticky lg:top-24">
+          <h2 class="font-display text-2xl text-ink-strong mb-6">Order Summary</h2>
+
+          <ul id="cart-items" class="space-y-5 mb-6 divide-y divide-line"></ul>
+
+          <div class="border-t border-line pt-5 mb-5">
+            <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Promo Code</label>
+            <div class="flex border border-line">
+              <input id="promo-input" type="text" placeholder="CURATED10" class="flex-1 h-11 px-3 bg-transparent text-sm focus:outline-none" />
+              <button type="button" id="promo-apply" class="px-4 bg-bg-soft hover:bg-bg-image text-[11px] uppercase tracking-lux text-ink-strong">Apply</button>
+            </div>
+            <p id="promo-msg" class="mt-2 text-[11px] min-h-[1rem]"></p>
+          </div>
+
+          <div class="space-y-2 text-sm border-t border-line pt-5">
+            <div class="flex justify-between text-ink-muted"><span>Subtotal</span><span id="subtotal">—</span></div>
+            <div class="flex justify-between text-ink-muted"><span>Shipping (insured)</span><span id="shipping">—</span></div>
+            <div id="disc-row" class="flex justify-between text-accent hidden"><span>Discount (<span id="disc-code">—</span>)</span><span id="disc-amt">−$0</span></div>
+            <div class="flex justify-between text-ink-muted"><span>VAT (18%)</span><span id="tax">—</span></div>
+            <div class="flex justify-between items-end pt-3 border-t border-line mt-3">
+              <span class="text-[11px] uppercase tracking-lux text-ink-muted">Total</span>
+              <span id="total" class="font-display text-3xl text-ink-strong">—</span>
+            </div>
+          </div>
+
+          <p class="mt-6 text-[11px] text-ink-muted leading-relaxed">Your card is not charged until the curator confirms condition and crating. Returns within 14 days, insured both ways.</p>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/pages/checkout.js"></script>
+</body>
+</html>

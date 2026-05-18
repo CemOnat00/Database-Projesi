@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compare — The Curated Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-active="compare" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-16">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+      <div>
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">Comparison</p>
+        <h1 class="font-display text-5xl text-ink-strong">Side by Side</h1>
+      </div>
+      <button id="save-btn" class="bg-brand hover:bg-brand-hover text-white px-8 py-4 text-[11px] uppercase tracking-lux transition-colors">Save Comparison</button>
+    </div>
+
+    <!-- TABS -->
+    <div class="flex border-b border-line mb-10">
+      <button data-tab="artworks" class="tab-btn px-6 py-3 text-[11px] uppercase tracking-lux border-b-2 border-brand text-ink-strong">Artworks</button>
+      <button data-tab="events" class="tab-btn px-6 py-3 text-[11px] uppercase tracking-lux border-b-2 border-transparent text-ink-muted hover:text-ink-strong">Workshops &amp; Events</button>
+    </div>
+
+    <section id="tab-artworks" class="tab-pane">
+      <div id="art-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
+      <div class="bg-surface border border-line overflow-hidden">
+        <div id="art-attrs"></div>
+      </div>
+    </section>
+
+    <section id="tab-events" class="tab-pane hidden">
+      <div id="ev-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"></div>
+      <div class="bg-surface border border-line overflow-hidden">
+        <div id="ev-attrs"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/pages/compare.js"></script>
+</body>
+</html>

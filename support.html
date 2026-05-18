@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support &amp; Contact — The Curated Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-active="about" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-16">
+
+    <div class="mb-12">
+      <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">Support</p>
+      <h1 class="font-display text-5xl text-ink-strong">Talk to the Curator</h1>
+      <p class="mt-4 text-ink-muted max-w-2xl">Questions about a work, an order, a workshop — or simply curious about the programme? Write to us; we read every message.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-12">
+
+      <form id="support-form" class="lg:col-span-2 bg-surface border border-line p-8">
+        <h2 class="font-display text-2xl text-ink-strong mb-6">Send a Message</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Name</label><input type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+          <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Email</label><input type="email" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+          <div class="md:col-span-2"><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Topic</label>
+            <select class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand">
+              <option>General Inquiry</option><option>Order Issue</option><option>Workshop Reservation</option><option>Artwork Authenticity</option><option>Press / Collaboration</option>
+            </select>
+          </div>
+          <div class="md:col-span-2"><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Subject</label><input type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+          <div class="md:col-span-2"><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Message</label><textarea rows="6" required class="w-full border border-line p-3 focus:outline-none focus:border-brand bg-transparent text-sm"></textarea></div>
+        </div>
+        <button type="submit" class="group mt-8 bg-brand hover:bg-brand-hover text-white px-10 py-4 text-[11px] uppercase tracking-lux flex items-center gap-3 transition-colors">
+          Send Message
+          <svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+
+      <aside class="space-y-6">
+        <div class="bg-surface border border-line p-6"><p class="text-[11px] uppercase tracking-lux text-ink-muted mb-2">Email</p><p class="text-ink-strong">curator@curatedgallery.art</p></div>
+        <div class="bg-surface border border-line p-6"><p class="text-[11px] uppercase tracking-lux text-ink-muted mb-2">Phone</p><p class="text-ink-strong">+90 212 000 0000</p><p class="text-[11px] text-ink-muted mt-2">Tue – Sat · 11:00 – 18:00 (GMT+3)</p></div>
+        <div class="bg-surface border border-line p-6"><p class="text-[11px] uppercase tracking-lux text-ink-muted mb-2">The Atelier</p><p class="text-ink-strong">Cihangir, Sıraselviler Cad.<br/>34433 Beyoğlu, İstanbul</p></div>
+        <button id="live-chat" class="w-full bg-brand hover:bg-brand-hover text-white py-4 text-[11px] uppercase tracking-lux transition-colors flex items-center justify-center gap-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Open Live Chat
+        </button>
+      </aside>
+    </div>
+
+    <section class="mt-20">
+      <h2 class="font-display text-3xl text-ink-strong mb-6">Your Recent Requests</h2>
+      <div class="bg-surface border border-line overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-bg-soft text-[11px] uppercase tracking-lux text-ink-muted">
+            <tr><th class="text-left px-5 py-4">Ticket</th><th class="text-left py-4">Subject</th><th class="text-left py-4">Submitted</th><th class="text-left py-4">Status</th></tr>
+          </thead>
+          <tbody id="tickets-tbody" class="divide-y divide-line text-ink-strong"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="mt-20">
+      <h2 class="font-display text-3xl text-ink-strong mb-6">Frequently Asked</h2>
+      <div class="space-y-3">
+        <details class="bg-surface border border-line p-5 group"><summary class="flex justify-between cursor-pointer text-ink-strong font-display text-lg list-none"><span>How do you authenticate a work?</span><span class="faq-caret text-ink-muted">+</span></summary><p class="mt-4 text-sm text-ink-muted leading-relaxed">Each piece arrives with a certificate of authenticity signed by the curator and the artist's studio where applicable.</p></details>
+        <details class="bg-surface border border-line p-5 group"><summary class="flex justify-between cursor-pointer text-ink-strong font-display text-lg list-none"><span>Can I cancel or reschedule a workshop?</span><span class="faq-caret text-ink-muted">+</span></summary><p class="mt-4 text-sm text-ink-muted leading-relaxed">Yes — anytime up to 48 hours before the session, from your dashboard. Full refunds are issued automatically.</p></details>
+        <details class="bg-surface border border-line p-5 group"><summary class="flex justify-between cursor-pointer text-ink-strong font-display text-lg list-none"><span>Do you ship internationally?</span><span class="faq-caret text-ink-muted">+</span></summary><p class="mt-4 text-sm text-ink-muted leading-relaxed">Worldwide. All shipments are crated by hand, insured, and tracked door-to-door.</p></details>
+        <details class="bg-surface border border-line p-5 group"><summary class="flex justify-between cursor-pointer text-ink-strong font-display text-lg list-none"><span>What is the return policy?</span><span class="faq-caret text-ink-muted">+</span></summary><p class="mt-4 text-sm text-ink-muted leading-relaxed">14 days, insured both ways. Reach out and we will arrange collection.</p></details>
+        <details class="bg-surface border border-line p-5 group"><summary class="flex justify-between cursor-pointer text-ink-strong font-display text-lg list-none"><span>How do discount codes work?</span><span class="faq-caret text-ink-muted">+</span></summary><p class="mt-4 text-sm text-ink-muted leading-relaxed">Codes (e.g. <code class="text-brand">CURATED10</code>) can be applied at checkout or on the workshop reservation page. One code per order.</p></details>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/pages/support.js"></script>
+</body>
+</html>

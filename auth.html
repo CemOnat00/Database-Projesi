@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — The Curated Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-nav="slim" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="grid lg:grid-cols-2 min-h-[calc(100vh-5rem)]">
+
+    <div class="hidden lg:block relative overflow-hidden">
+      <img src="https://images.unsplash.com/photo-1577720580479-7d839d829c73?q=80&w=1400&auto=format&fit=crop" alt="" class="w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-ink-strong/30"></div>
+      <div class="absolute bottom-12 left-12 right-12 text-white">
+        <p class="font-display italic text-3xl leading-snug max-w-md">"To collect is to slow down — to look, and look again."</p>
+        <p class="mt-4 text-[11px] uppercase tracking-lux opacity-80">— The Curator</p>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-center p-8 lg:p-16 bg-bg">
+      <div class="w-full max-w-md">
+
+        <div class="flex border-b border-line mb-10">
+          <button data-tab="signin" class="tab-btn flex-1 px-4 py-3 text-[11px] uppercase tracking-lux border-b-2 border-brand text-ink-strong">Sign In</button>
+          <button data-tab="signup" class="tab-btn flex-1 px-4 py-3 text-[11px] uppercase tracking-lux border-b-2 border-transparent text-ink-muted hover:text-ink-strong">Create Account</button>
+        </div>
+
+        <!-- SIGN IN -->
+        <form id="form-signin" class="space-y-6">
+          <h1 class="font-display text-4xl text-ink-strong leading-tight">Welcome back.</h1>
+          <p class="text-ink-muted text-sm">Sign in to view your collection, reservations and favorites.</p>
+
+          <div>
+            <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Email</label>
+            <input name="email" type="email" required autocomplete="email" placeholder="you@example.com" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Password</label>
+            <input name="password" type="password" required autocomplete="current-password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+          </div>
+          <p id="signin-msg" class="text-[11px] uppercase tracking-lux mt-2 min-h-[1rem]"></p>
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 text-[11px] uppercase tracking-lux text-ink-muted cursor-pointer">
+              <input type="checkbox" class="accent-brand" /> Remember Me
+            </label>
+            <a href="#" class="text-[11px] uppercase tracking-lux text-brand border-b border-brand/40 pb-0.5">Forgot Password?</a>
+          </div>
+
+          <button type="submit" class="group w-full bg-brand hover:bg-brand-hover text-white py-4 text-[11px] uppercase tracking-lux flex items-center justify-center gap-3 transition-colors">
+            Sign In
+            <svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+
+          <p class="text-[11px] text-ink-muted leading-relaxed">Demo account: <code class="text-brand">cem@example.com</code> · <code class="text-brand">curated123</code></p>
+
+          <div class="flex items-center gap-4 text-[11px] uppercase tracking-lux text-ink-muted">
+            <span class="flex-1 h-px bg-line"></span><span>Or</span><span class="flex-1 h-px bg-line"></span>
+          </div>
+
+          <button type="button" id="google-btn" class="w-full border border-line py-4 text-[11px] uppercase tracking-lux text-ink-strong hover:bg-bg-soft transition-colors">Continue with Google</button>
+        </form>
+
+        <!-- SIGN UP -->
+        <form id="form-signup" class="space-y-6 hidden">
+          <h1 class="font-display text-4xl text-ink-strong leading-tight">Join the gallery.</h1>
+          <p class="text-ink-muted text-sm">An account unlocks favorites, reservations and quiet previews of upcoming shows.</p>
+
+          <div>
+            <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Full Name</label>
+            <input name="name" type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Email</label>
+            <input name="email" type="email" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+          </div>
+          <div class="grid grid-cols-2 gap-5">
+            <div>
+              <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Password</label>
+              <input name="password" type="password" required minlength="8" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+            </div>
+            <div>
+              <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Confirm</label>
+              <input name="password2" type="password" required minlength="8" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+            </div>
+          </div>
+          <label class="flex items-start gap-2 text-[11px] tracking-wide text-ink-muted cursor-pointer">
+            <input type="checkbox" required class="accent-brand mt-1" />
+            <span>I agree to the <a href="#" class="underline">Terms of Service</a> and <a href="#" class="underline">Privacy Policy</a>.</span>
+          </label>
+          <p id="signup-msg" class="text-[11px] uppercase tracking-lux mt-2 min-h-[1rem]"></p>
+          <button type="submit" class="group w-full bg-brand hover:bg-brand-hover text-white py-4 text-[11px] uppercase tracking-lux flex items-center justify-center gap-3 transition-colors">
+            Create Account
+            <svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root" class="hidden"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/pages/auth.js"></script>
+</body>
+</html>

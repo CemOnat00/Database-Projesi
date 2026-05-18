@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insights — The Curated Gallery · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-nav="admin" data-active="insights" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+      <div>
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">Curator Console</p>
+        <h1 class="font-display text-5xl text-ink-strong">Insights</h1>
+      </div>
+      <div class="flex gap-3">
+        <select class="border border-line px-4 py-3 text-[11px] uppercase tracking-lux text-ink-strong bg-surface">
+          <option>Last 30 days</option><option>This Quarter</option><option>This Year</option><option>All Time</option>
+        </select>
+        <button id="export-btn" class="bg-brand hover:bg-brand-hover text-white px-6 py-3 text-[11px] uppercase tracking-lux transition-colors">Export</button>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-12">
+      <div class="bg-surface border border-line p-6">
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted">Total Orders</p>
+        <p id="kpi-orders" class="font-display text-4xl text-ink-strong mt-2">0</p>
+        <p class="text-[10px] uppercase tracking-lux text-brand mt-3">▲ 12.4% vs prev.</p>
+      </div>
+      <div class="bg-surface border border-line p-6">
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted">Reservations</p>
+        <p id="kpi-reservations" class="font-display text-4xl text-ink-strong mt-2">0</p>
+        <p class="text-[10px] uppercase tracking-lux text-brand mt-3">▲ 8.1% vs prev.</p>
+      </div>
+      <div class="bg-surface border border-line p-6">
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted">Revenue</p>
+        <p id="kpi-revenue" class="font-display text-4xl text-ink-strong mt-2">$0</p>
+        <p class="text-[10px] uppercase tracking-lux text-brand mt-3">▲ 5.7% vs prev.</p>
+      </div>
+      <div class="bg-surface border border-line p-6">
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted">Avg. Rating</p>
+        <p id="kpi-rating" class="font-display text-4xl text-ink-strong mt-2">0.00</p>
+        <p class="text-[10px] uppercase tracking-lux text-accent mt-3">▼ 0.04 vs prev.</p>
+      </div>
+    </section>
+
+    <!-- Chart -->
+    <section class="bg-surface border border-line p-8 mb-12">
+      <div class="flex justify-between items-end mb-8">
+        <div>
+          <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-2">Revenue · Last 12 Months</p>
+          <h2 class="font-display text-2xl text-ink-strong">Trailing twelve</h2>
+        </div>
+        <p class="text-[11px] uppercase tracking-lux text-brand">+12.4% YoY</p>
+      </div>
+      <div id="chart" class="flex items-end gap-3 h-48"></div>
+    </section>
+
+    <!-- Tables -->
+    <section class="grid lg:grid-cols-2 gap-8 mb-12">
+      <div class="bg-surface border border-line">
+        <div class="p-6 border-b border-line">
+          <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-1">Per-Artwork</p>
+          <h2 class="font-display text-2xl text-ink-strong">Top Artworks</h2>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-bg-soft text-[11px] uppercase tracking-lux text-ink-muted"><tr><th class="text-left px-6 py-3">Title</th><th class="text-right py-3">Likes</th><th class="text-right py-3">Views</th><th class="text-right py-3 pr-6">Reviews</th></tr></thead>
+          <tbody id="top-artworks" class="divide-y divide-line text-ink-strong"></tbody>
+        </table>
+      </div>
+
+      <div class="bg-surface border border-line">
+        <div class="p-6 border-b border-line">
+          <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-1">Per-Event</p>
+          <h2 class="font-display text-2xl text-ink-strong">Top Workshops</h2>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="bg-bg-soft text-[11px] uppercase tracking-lux text-ink-muted"><tr><th class="text-left px-6 py-3">Workshop</th><th class="text-right py-3">Occupancy</th><th class="text-right py-3">Avg ★</th><th class="text-right py-3 pr-6">Reviews</th></tr></thead>
+          <tbody id="top-workshops" class="divide-y divide-line text-ink-strong"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bg-surface border border-line p-8">
+      <h2 class="font-display text-2xl text-ink-strong mb-6">Recent Activity</h2>
+      <ul id="activity" class="divide-y divide-line"></ul>
+    </section>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/pages/admin.js"></script>
+</body>
+</html>

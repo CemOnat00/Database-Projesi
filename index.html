@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Curated Gallery — Contemporary Art &amp; Atelier Workshops</title>
+  <meta name="description" content="A small, deliberate online gallery exhibiting contemporary paintings, sculpture and offering masterclass workshops." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-active="gallery" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main>
+    <!-- HERO -->
+    <section class="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-28 grid lg:grid-cols-2 gap-16 items-center">
+      <div>
+        <span class="block text-[11px] uppercase tracking-lux text-ink-muted mb-6 border-b border-line pb-2 w-fit">Featured Exhibition</span>
+        <h1 class="font-display text-5xl md:text-7xl lg:text-[6rem] text-ink-strong leading-[0.95] tracking-tight">
+          Silence<br /><span class="italic text-accent font-normal">&amp; Space</span>
+        </h1>
+        <p class="mt-8 text-ink-muted text-lg max-w-md leading-relaxed">
+          A collection exploring the profound weight of minimalism. Earth tones, stark geometry, and organic textures converge.
+        </p>
+        <a href="gallery.html" class="group mt-10 inline-flex items-center gap-4 bg-brand hover:bg-brand-hover text-white px-10 py-5 uppercase tracking-lux text-[11px] transition-colors">
+          Explore Collection
+          <svg width="18" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div class="relative aspect-[4/5]">
+        <div class="absolute -bottom-6 -left-6 w-3/4 h-full bg-bg-image -z-10"></div>
+        <img src="https://images.unsplash.com/photo-1549289524-06cf8837ace5?q=80&w=1200&auto=format&fit=crop" alt="Featured artwork" class="w-full h-full object-cover" />
+        <div class="absolute bottom-4 right-4 bg-bg/90 backdrop-blur p-4 text-right">
+          <p class="font-display text-lg text-ink-strong">Ochre Study No. 4</p>
+          <p class="text-[10px] uppercase tracking-lux text-ink-muted mt-1">Elena Rostova</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEARCH BAR -->
+    <section class="bg-bg-soft border-y border-line">
+      <div class="max-w-7xl mx-auto px-6 lg:px-12 py-8 flex flex-col md:flex-row justify-between items-end gap-6">
+        <div class="w-full md:w-1/3 relative">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5a4a42" stroke-width="1.5" class="absolute left-0 bottom-3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="home-search" type="text" placeholder="Search artists, collections, mediums..." class="w-full bg-transparent border-b border-line pl-8 pb-3 text-ink-strong focus:outline-none focus:border-brand" />
+        </div>
+        <div class="flex flex-wrap gap-8 text-[#2a1b15]">
+          <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted">Medium</label><select class="mt-2 bg-transparent border-b border-transparent pb-1 focus:outline-none"><option>All Mediums</option><option>Painting</option><option>Photography</option><option>Sculpture</option></select></div>
+          <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted">Price</label><select class="mt-2 bg-transparent border-b border-transparent pb-1 focus:outline-none"><option>Any Price</option><option>Under $1,000</option><option>$1,000 – $3,000</option><option>$3,000 +</option></select></div>
+          <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted">Sort By</label><select class="mt-2 bg-transparent border-b border-transparent pb-1 focus:outline-none"><option>Curator's Choice</option><option>Newest</option><option>Price · Low to High</option></select></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRENDING -->
+    <section class="max-w-7xl mx-auto px-6 lg:px-12 py-20">
+      <div class="flex justify-between items-end mb-12">
+        <h2 class="font-display text-4xl md:text-5xl text-ink-strong">Trending Now</h2>
+        <a href="gallery.html" class="text-[11px] uppercase tracking-lux text-accent border-b border-accent pb-1 hover:text-brand">View All Trending</a>
+      </div>
+      <div id="trending-grid" class="grid grid-cols-1 md:grid-cols-12 gap-8"></div>
+    </section>
+
+    <!-- COLLECTION -->
+    <section class="bg-surface border-y border-line">
+      <div class="max-w-7xl mx-auto px-6 lg:px-12 py-24">
+        <h2 class="font-display text-5xl text-ink-strong italic text-center mb-16">The Collection</h2>
+        <div id="collection-grid" class="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-20"></div>
+        <div class="flex justify-center mt-20">
+          <a href="gallery.html" class="border border-ink-strong/30 px-12 py-4 text-[11px] uppercase tracking-lux text-ink-strong hover:bg-ink-strong hover:text-white transition-colors">Load More Works</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORKSHOPS TEASER -->
+    <section class="max-w-7xl mx-auto px-6 lg:px-12 py-24">
+      <div class="grid lg:grid-cols-2 gap-16 items-center">
+        <div class="overflow-hidden bg-bg-image aspect-[5/4]">
+          <img src="https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?q=80&w=1200&auto=format&fit=crop" alt="Atelier" class="w-full h-full object-cover" />
+        </div>
+        <div>
+          <span class="block text-[11px] uppercase tracking-lux text-ink-muted mb-4">Atelier Workshops</span>
+          <h2 class="font-display text-4xl md:text-5xl text-ink-strong leading-tight">Learn the craft, <span class="italic">slowly.</span></h2>
+          <p class="mt-6 text-ink-muted leading-relaxed">
+            Small-group masterclasses led by exhibiting artists, hosted in our atelier on the 2nd floor. Six-hour intensives, two-day weekends, and quiet evening sessions on glazing, ceramics and printmaking.
+          </p>
+          <a href="workshops.html" class="group mt-8 inline-flex items-center gap-3 border-b border-ink-strong pb-2 text-[11px] uppercase tracking-lux text-ink-strong">
+            See This Season's Programme
+            <svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/pages/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+/* ============================================================
+   The Curated Gallery — Shared Stylesheet
+   ============================================================
+   Design tokens, utility classes and small component styles that
+   complement Tailwind's CDN build. Loaded by every page.
+   ============================================================ */
+
+:root {
+  --bg:           #f9f8f6;
+  --bg-soft:      #f4f3f0;
+  --bg-image:     #efeae3;
+  --surface:      #ffffff;
+  --ink:          #1a1a1a;
+  --ink-strong:   #2a1b15;
+  --ink-muted:    #5a4a42;
+  --ink-faint:    #bdb3a7;
+  --brand:        #3a1a0f;
+  --brand-hover:  #4a2418;
+  --accent:       #944925;
+  --border:       #e5e1db;
+  --danger:       #944925;
+  --success:      #3a1a0f;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+
+  --transition:   220ms ease-out;
+}
+
+/* ---- Base ----------------------------------------------------- */
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--brand);
+  color: #fff;
+}
+
+/* ---- Utility classes (used in HTML) -------------------------- */
+.font-serif-display { font-family: var(--font-display); }
+.font-body          { font-family: var(--font-body); }
+.tracking-wider-lux { letter-spacing: 0.28em; }
+.tracking-medium-lux { letter-spacing: 0.18em; }
+
+/* ---- Form normalization -------------------------------------- */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235a4a42' stroke-width='1.5'%3e%3cpath d='m6 9 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0 center;
+  background-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 22px;
+}
+
+/* ---- Modal animation ----------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .modal-enter { animation: fadeIn 220ms ease-out both; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ---- Toast ---------------------------------------------------- */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--ink-strong);
+  color: #fff;
+  padding: 14px 28px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  z-index: 100;
+  opacity: 0;
+  transition: transform 280ms ease-out, opacity 280ms ease-out;
+  pointer-events: none;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ---- Bar chart cells (admin) --------------------------------- */
+.bar {
+  background: linear-gradient(to top, var(--brand), var(--accent));
+  width: 100%;
+  transition: opacity var(--transition);
+}
+.bar:hover { opacity: 0.85; }
+
+/* ---- Card hover image scale (used everywhere) ----------------- */
+.img-zoom {
+  transition: transform 700ms ease-out;
+}
+.group:hover .img-zoom { transform: scale(1.03); }
+
+/* ---- FAQ caret rotation -------------------------------------- */
+details[open] .faq-caret { transform: rotate(45deg); }
+.faq-caret { transition: transform 220ms ease-out; }
+
+/* ---- Sticky bottom action shim ------------------------------- */
+.has-sticky-form { padding-bottom: 80px; }
+
+/* ---- Print: keep gallery elegant ----------------------------- */
+@media print {
+  header, footer, .no-print { display: none !important; }
+  body { background: #fff; }
+}
