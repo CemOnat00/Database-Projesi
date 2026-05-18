@@ -26,12 +26,16 @@
     renderOrders();
     renderReservations();
     renderFavorites();
+    renderOffers();
+    renderComparisons();
     bindForms();
     bindUpdateModal();
 
     Store.subscribe('favorites',    () => { renderFavorites(); renderOverview(); });
     Store.subscribe('reservations', () => { renderReservations(); renderOverview(); });
     Store.subscribe('orders',       () => { renderOrders(); renderOverview(); });
+    Store.subscribe('user',         () => { renderOffers(); });
+    Store.subscribe('comparisons',  renderComparisons);
 
     const want = new URLSearchParams(location.search).get('pane');
     if (want) {
@@ -360,6 +364,109 @@
     modal.classList.remove('flex');
     document.body.style.overflow = '';
     updateContext = null;
+  }
+
+  /* ============================================================
+     COMPARISONS — kullanıcının kaydettiği karşılaştırmalar (Req 11)
+     ============================================================ */
+
+  function renderComparisons() {
+    const root = Utils.qs('#comparisons-list');
+    const empty = Utils.qs('#comparisons-empty');
+    const header = Utils.qs('#comparisons-header');
+    if (!root) return;
+
+    const items = Store.Comparisons.list();
+    if (header) header.textContent = `${items.length} ${items.length === 1 ? 'comparison' : 'comparisons'} saved`;
+
+    if (items.length === 0) {
+      root.innerHTML = '';
+      if (empty) empty.classList.remove('hidden');
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+
+    root.innerHTML = items.map(c => {
+      const ids = (c.payload && c.payload.ids) || [];
+      const type = (c.payload && c.payload.type) || 'artworks';
+      const names = ids.map(id => {
+        const it = type === 'events' ? GALLERY.getWorkshop(id) : GALLERY.getArtwork(id);
+        return it && it.title ? it.title : id;
+      });
+      const href = `compare.html?tab=${type}&ids=${ids.join(',')}`;
+      const saved = c.savedAt ? new Date(c.savedAt).toLocaleString() : '';
+      return `
+        <article class="bg-surface border border-line p-6 flex flex-col md:flex-row md:items-center gap-5">
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] uppercase tracking-lux text-ink-muted">${type === 'events' ? 'Workshops & Events' : 'Artworks'} · ${ids.length} items</p>
+            <h3 class="font-display text-xl text-ink-strong mt-1 truncate">${names.map(Utils.escapeHTML).join(' · ')}</h3>
+            <p class="text-[11px] text-ink-muted mt-1">${Utils.escapeHTML(saved)}</p>
+          </div>
+          <div class="flex gap-2 md:items-end">
+            <a href="${href}" class="text-[11px] uppercase tracking-lux text-brand border border-brand/30 px-4 py-2 hover:bg-brand hover:text-white transition-colors">Reopen</a>
+            <button data-id="${c.id}" class="cmp-remove text-[11px] uppercase tracking-lux text-accent border border-accent/30 px-4 py-2 hover:bg-accent hover:text-white transition-colors">Remove</button>
+          </div>
+        </article>`;
+    }).join('');
+
+    Utils.qsa('.cmp-remove', root).forEach(b => b.addEventListener('click', () => {
+      Store.Comparisons.remove(b.getAttribute('data-id'));
+      Utils.toast('Comparison removed');
+    }));
+  }
+
+  /* ============================================================
+     OFFERS — kullanıcıya özel ve genel indirim kuponları (Req 9)
+     ============================================================ */
+
+  async function renderOffers() {
+    const root = Utils.qs('#offers-list');
+    const empty = Utils.qs('#offers-empty');
+    const header = Utils.qs('#offers-header');
+    if (!root) return;
+
+    const user = Store.User.get();
+    const offers = await GALLERY.api.listOffers(user && user.email);
+
+    if (header) header.textContent = `${offers.length} ${offers.length === 1 ? 'offer' : 'offers'} available`;
+
+    if (offers.length === 0) {
+      root.innerHTML = '';
+      if (empty) empty.classList.remove('hidden');
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+
+    const personalCodes = new Set();
+    if (user && GALLERY.OFFERS[user.email.toLowerCase()]) {
+      GALLERY.OFFERS[user.email.toLowerCase()].forEach(o => personalCodes.add(o.code));
+    }
+
+    root.innerHTML = offers.map(o => {
+      const personal = personalCodes.has(o.code);
+      const scopeLabel = ({ workshops: 'Workshops only', all: 'Artworks & Workshops', public: 'Public offer' })[o.scope] || o.scope;
+      return `
+        <article class="bg-surface border ${personal ? 'border-brand' : 'border-line'} p-6 relative">
+          ${personal ? '<span class="absolute -top-3 left-6 bg-brand text-white px-3 py-1 text-[10px] uppercase tracking-lux">For You</span>' : ''}
+          <p class="text-[11px] uppercase tracking-lux text-ink-muted">${Utils.escapeHTML(scopeLabel)}</p>
+          <h3 class="font-display text-2xl text-ink-strong mt-2">${Utils.escapeHTML(o.label)}</h3>
+          <p class="text-sm text-ink-muted mt-2 leading-relaxed">${Utils.escapeHTML(o.description || '')}</p>
+          <div class="mt-5 flex items-center gap-3">
+            <code class="font-mono text-base tracking-wider text-brand bg-bg-soft border border-dashed border-brand/40 px-4 py-2">${Utils.escapeHTML(o.code)}</code>
+            <button data-code="${Utils.escapeHTML(o.code)}" class="copy-offer text-[11px] uppercase tracking-lux text-ink-muted hover:text-brand border-b border-line hover:border-brand pb-0.5 transition-colors">Copy Code</button>
+          </div>
+        </article>`;
+    }).join('');
+
+    Utils.qsa('.copy-offer', root).forEach(b => b.addEventListener('click', async () => {
+      const code = b.getAttribute('data-code');
+      try {
+        await navigator.clipboard.writeText(code);
+        Utils.toast(`${code} copied`);
+      } catch (_) {
+        Utils.toast(code);
+      }
+    }));
   }
 
   /* ============================================================

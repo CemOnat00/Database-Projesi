@@ -79,6 +79,10 @@
 
   function priceLabel(w) {
     if (w.complimentary || !w.price) return 'Complimentary';
+    if (w.campaign && w.campaign.type === 'sale' && w.campaign.pct) {
+      const sale = Math.round(w.price * (100 - w.campaign.pct) / 100);
+      return `<span class="line-through text-ink-muted text-sm mr-1">${Utils.fmtMoney(w.price)}</span><span class="text-accent">${Utils.fmtMoney(sale)} USD</span>`;
+    }
     return Utils.fmtMoney(w.price) + ' USD';
   }
 
@@ -95,11 +99,20 @@
     return `<a href="workshop-detail.html?id=${w.id}" class="group ${variant === 'primary' ? 'bg-brand hover:bg-brand-hover text-white' : 'border border-ink-strong/30 text-ink-strong hover:bg-ink-strong hover:text-white'} px-6 py-4 text-[11px] uppercase tracking-lux flex items-center justify-between transition-colors">Book Now<svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`;
   }
 
+  function campaignBadge(w) {
+    if (!w.campaign) return '';
+    const cls = w.campaign.type === 'sale' ? 'bg-accent text-white'
+              : w.campaign.type === 'new'  ? 'bg-brand text-white'
+              : 'bg-ink-strong text-white';
+    return `<span class="absolute top-4 left-4 ${cls} px-3 py-1 text-[10px] uppercase tracking-lux z-10">${Utils.escapeHTML(w.campaign.label)}</span>`;
+  }
+
   function featured(w) {
     const session = (w.sessions && w.sessions[0]) || { dateLong: 'Date TBA', time: '' };
     return `
       <article class="md:col-span-8 flex flex-col md:flex-row gap-8 lg:gap-12">
-        <a href="workshop-detail.html?id=${w.id}" class="md:w-3/5 overflow-hidden bg-bg-image group">
+        <a href="workshop-detail.html?id=${w.id}" class="md:w-3/5 overflow-hidden bg-bg-image group relative block">
+          ${campaignBadge(w)}
           <img src="${Utils.img(w.image, 1200)}" alt="${Utils.escapeHTML(w.title)}" class="w-full aspect-[4/3] object-cover img-zoom" />
         </a>
         <div class="md:w-2/5 flex flex-col gap-4">
@@ -135,7 +148,8 @@
     const layout = layouts[(i - 1) % layouts.length];
     return `
       <article class="${layout.col} flex flex-col gap-4">
-        <a href="workshop-detail.html?id=${w.id}" class="overflow-hidden bg-bg-image group block">
+        <a href="workshop-detail.html?id=${w.id}" class="overflow-hidden bg-bg-image group block relative">
+          ${campaignBadge(w)}
           <img src="${Utils.img(w.image, 900)}" alt="${Utils.escapeHTML(w.title)}" class="w-full ${layout.aspect} object-cover img-zoom" />
         </a>
         <div class="flex justify-between text-[11px] uppercase tracking-lux">

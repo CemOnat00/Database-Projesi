@@ -22,15 +22,20 @@
   function prefillFromUser() {
     const user = Store.User.get();
     if (!user) return;
-    const set = (sel, val) => { const el = Utils.qs(sel); if (el && val) el.value = val; };
-    set('input[type="email"]', user.email);
-    set('input[type="tel"]', user.phone);
+    const form = Utils.qs('#checkout-form');
+    if (!form) return;
+    const set = (name, val) => {
+      const el = form.querySelector(`[name="${name}"]`);
+      if (el && val != null && val !== '') el.value = val;
+    };
+    set('email', user.email);
+    set('phone', user.phone);
     if (user.name) {
       const [first, ...rest] = user.name.split(' ');
-      set('input[name="firstName"], section:nth-of-type(2) .grid > div:nth-child(1) input', first);
-      set('input[name="lastName"], section:nth-of-type(2) .grid > div:nth-child(2) input', rest.join(' '));
+      set('firstName', first);
+      set('lastName', rest.join(' '));
     }
-    if (user.address) set('section:nth-of-type(2) .grid > div:nth-child(3) input', user.address);
+    set('address', user.address);
   }
 
   function renderItems() {
@@ -76,13 +81,25 @@
   function bindPaymentMethod() {
     Utils.qsa('input[name="pay"]').forEach(r => r.addEventListener('change', () => {
       state.paymentMethod = r.value;
-      const cardFields = Utils.qs('#card-fields');
-      const bankNotice = Utils.qs('#bank-notice');
-      const paypalNotice = Utils.qs('#paypal-notice');
-      if (cardFields) cardFields.classList.toggle('hidden', r.value !== 'card');
-      if (bankNotice) bankNotice.classList.toggle('hidden', r.value !== 'bank');
-      if (paypalNotice) paypalNotice.classList.toggle('hidden', r.value !== 'paypal');
+      applyPaymentMode(r.value);
     }));
+    // Initialize for the default checked option
+    const checked = Utils.qs('input[name="pay"]:checked');
+    if (checked) applyPaymentMode(checked.value);
+  }
+
+  function applyPaymentMode(method) {
+    const cardFields   = Utils.qs('#card-fields');
+    const bankNotice   = Utils.qs('#bank-notice');
+    const paypalNotice = Utils.qs('#paypal-notice');
+    if (cardFields)   cardFields.classList.toggle('hidden', method !== 'card');
+    if (bankNotice)   bankNotice.classList.toggle('hidden', method !== 'bank');
+    if (paypalNotice) paypalNotice.classList.toggle('hidden', method !== 'paypal');
+    // Card fields are required only when method === 'card'
+    Utils.qsa('.card-field').forEach(el => {
+      if (method === 'card') el.setAttribute('required', '');
+      else el.removeAttribute('required');
+    });
   }
 
   function bindPromo() {
@@ -146,8 +163,14 @@
   function collectCustomer() {
     const fd = new FormData(Utils.qs('#checkout-form'));
     return {
-      email: Utils.qs('#checkout-form input[type="email"]')?.value,
-      phone: Utils.qs('#checkout-form input[type="tel"]')?.value,
+      email:      fd.get('email') || '',
+      phone:      fd.get('phone') || '',
+      firstName:  fd.get('firstName') || '',
+      lastName:   fd.get('lastName') || '',
+      address:    fd.get('address') || '',
+      city:       fd.get('city') || '',
+      postalCode: fd.get('postalCode') || '',
+      country:    fd.get('country') || '',
     };
   }
 

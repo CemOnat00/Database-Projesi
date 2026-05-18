@@ -179,9 +179,43 @@
             <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">Reviews</p>
             <h2 class="font-display text-3xl md:text-4xl text-ink-strong">Voices from the Atelier</h2>
           </div>
-          <div id="review-summary" class="flex items-center gap-4"></div>
+          <div class="flex items-center gap-4">
+            <div id="review-summary" class="flex items-center gap-4"></div>
+            <select id="review-sort" class="border-b border-line pb-1 text-sm bg-transparent focus:outline-none focus:border-brand">
+              <option>Most Recent</option><option>Highest Rated</option><option>Most Helpful</option>
+            </select>
+          </div>
         </div>
         <div id="review-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+        <!-- Write a review (Req 12) -->
+        <div class="mt-12 bg-surface border border-line p-8">
+          <h3 class="font-display text-2xl text-ink-strong mb-2">Share Your Experience</h3>
+          <p id="workshop-review-gate-msg" class="text-[11px] uppercase tracking-lux text-ink-muted mb-6">Reviews from past attendees are marked as verified. Sign in to submit.</p>
+          <form id="review-form" class="grid md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Rating</label>
+              <div class="flex gap-1">
+                <button type="button" data-r="1" class="star text-line hover:text-accent"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>
+                <button type="button" data-r="2" class="star text-line hover:text-accent"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>
+                <button type="button" data-r="3" class="star text-line hover:text-accent"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>
+                <button type="button" data-r="4" class="star text-line hover:text-accent"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>
+                <button type="button" data-r="5" class="star text-line hover:text-accent"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Display Name</label>
+              <input name="display" type="text" required class="w-full border-b border-line pb-2 focus:outline-none focus:border-brand bg-transparent" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Your Words</label>
+              <textarea name="body" rows="4" required class="w-full border border-line p-3 focus:outline-none focus:border-brand bg-transparent text-sm"></textarea>
+            </div>
+            <div class="md:col-span-2">
+              <button type="submit" class="bg-brand hover:bg-brand-hover text-white px-10 py-4 text-[11px] uppercase tracking-lux transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Submit Review</button>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
   </main>

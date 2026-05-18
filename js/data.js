@@ -73,6 +73,7 @@
       description: 'Charcoal sketch of a twisted ancient olive tree on heavy textured paper. The branches are drawn with a single, unbroken hand — the page wears every hesitation.',
       aspect: 'aspect-[4/5]',
       stats: { likes: 255, views: 5238, reviewCount: 12 },
+      campaign: { type: 'sale', label: '15% Off — Spring Sale', pct: 15 },
     },
     {
       id: 'mirage-protocol',
@@ -93,6 +94,7 @@
       description: 'Vibrant surrealist digital artwork featuring floating geometric shapes in a desert landscape at dusk. Procedural color, printed on archival paper, signed and numbered by the artist.',
       aspect: 'aspect-square',
       stats: { likes: 228, views: 4891, reviewCount: 8 },
+      campaign: { type: 'new', label: 'New Arrival' },
     },
     {
       id: 'oxidation-study',
@@ -153,6 +155,7 @@
       description: 'Bold pop-art inspired portrait using bright neon colors and heavy halftone patterns. Hand-pulled across six screens, signed and numbered in the lower margin.',
       aspect: 'aspect-[4/5]',
       stats: { likes: 191, views: 4012, reviewCount: 6 },
+      campaign: { type: 'sale', label: '10% Off — Studio Kilo Days', pct: 10 },
     },
     {
       id: 'surface-tension',
@@ -269,6 +272,7 @@
         { date: '2026-11-05', time: '18:00', label: 'Nov 5', dateLong: 'Thursday, November 5, 2026' },
       ],
       stats: { rating: 4.7, reviewCount: 32, occupancy: 0.85 },
+      campaign: { type: 'new', label: 'New This Season' },
     },
     {
       id: 'generative-art-code',
@@ -320,6 +324,7 @@
         { date: '2026-11-18', time: '10:00', label: 'Nov 18', dateLong: 'Wednesday, November 18, 2026' },
       ],
       stats: { rating: 4.7, reviewCount: 32, occupancy: 0.88 },
+      campaign: { type: 'sale', label: '20% Off — Spring Programme', pct: 20 },
     },
     {
       id: 'curatorial-walk',
@@ -401,11 +406,35 @@
 
   const COUPONS = { CURATED10: 10, FIRSTBRUSH: 15, ATELIER20: 20 };
 
+  // ---- User-specific offers --------------------------------------
+  // Backend: SELECT code, description, scope FROM offers WHERE user_email=? OR scope='public'
+  const OFFERS = {
+    // Public — available to everyone
+    public: [
+      { code: 'CURATED10', label: '10% off your first purchase',     description: 'Use at checkout. One-time application.', scope: 'public' },
+      { code: 'FIRSTBRUSH', label: '15% off any workshop',            description: 'Newcomer offer for atelier sessions.',  scope: 'workshops' },
+    ],
+    // Per-user — keyed by email (lowercase)
+    'cem@example.com': [
+      { code: 'ATELIER20',  label: '20% off — loyalty offer',         description: 'Thank-you for collecting with us. Use on any reservation or artwork.', scope: 'all' },
+    ],
+  };
+
   /* ---- Helper lookups ---------------------------------------- */
   function getArtwork(id) { return ARTWORKS.find(a => a.id === id) || ARTWORKS[0]; }
   function getWorkshop(id) { return WORKSHOPS.find(w => w.id === id) || WORKSHOPS[0]; }
   function getReviews(targetId) { return REVIEWS[targetId] || []; }
   function getOrder(id) { return ORDERS.find(o => o.id === id) || ORDERS[0]; }
+
+  /* ---- Live chat auto-reply (frontend simulation) ------------ */
+  function pickAutoReply(text) {
+    const q = (text || '').toLowerCase();
+    if (/refund|return|geri|iade/.test(q)) return 'Returns are accepted within 14 days, insured both ways. Send your order number and we will arrange collection.';
+    if (/ship|delivery|kargo/.test(q))      return 'All works ship insured, hand-crated. Standard delivery is 14–21 days, with daily tracking once dispatched.';
+    if (/workshop|atölye/.test(q))           return 'Our workshops cover painting, sculpture and generative art. You can cancel up to 48 hours before the session for a full refund.';
+    if (/discount|coupon|kupon|indirim/.test(q)) return 'Try the codes CURATED10, FIRSTBRUSH or ATELIER20 at checkout. One code per order.';
+    return 'Thank you for writing. A curator will follow up here within a few minutes — usually faster between 11:00 and 18:00 GMT+3.';
+  }
 
   /* ---- API layer (backend-ready) ----------------------------
      Şu an in-memory. Backend bağlandığında her fonksiyonun gövdesi
@@ -580,10 +609,22 @@
     },
 
     // Reviews
-    async listReviews(targetId) {
-      // TODO(backend): return fetch(`/api/reviews?target=${targetId}`).then(r => r.json());
+    async listReviews(targetId, sort) {
+      // TODO(backend): return fetch(`/api/reviews?target=${targetId}&sort=${sort||'recent'}`).then(r => r.json());
       await delay(0);
-      return REVIEWS[targetId] || [];
+      // Merge admin replies persisted in localStorage over the static seed data
+      const storedReplies = global.Store.ReviewReplies
+        ? (global.Store.ReviewReplies.map()[targetId] || {})
+        : {};
+      const arr = (REVIEWS[targetId] || []).slice().map((r, i) => {
+        const persisted = storedReplies[String(i)];
+        return persisted !== undefined ? Object.assign({}, r, { reply: persisted }) : r;
+      });
+      const key = sort || 'recent';
+      if (key === 'rating')   arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      else if (key === 'helpful') arr.sort((a, b) => (b.helpful || 0) - (a.helpful || 0));
+      // 'recent' is insertion order (unshift on create), no sort needed
+      return arr;
     },
     async createReview(targetId, payload) {
       // TODO(backend): return fetch(`/api/reviews/${targetId}`, { method: 'POST', body: ... })
@@ -595,6 +636,86 @@
       );
       REVIEWS[targetId].unshift(review);
       return { ok: true, review };
+    },
+    async toggleReviewHelpful(targetId, reviewIndex) {
+      // TODO(backend): POST /api/reviews/:targetId/:index/helpful (toggles user's vote)
+      await delay(0);
+      const arr = REVIEWS[targetId];
+      if (!arr || !arr[reviewIndex]) return { ok: false, error: 'not_found' };
+      const key = `${targetId}:${reviewIndex}`;
+      const wasOn = global.Store.ReviewVotes.has(key);
+      global.Store.ReviewVotes.toggle(key);
+      arr[reviewIndex].helpful = Math.max(0, (arr[reviewIndex].helpful || 0) + (wasOn ? -1 : 1));
+      return { ok: true, helpful: arr[reviewIndex].helpful, on: !wasOn };
+    },
+    async replyToReview(targetId, reviewIndex, replyText) {
+      // TODO(backend): PATCH /api/reviews/:targetId/:index/reply
+      await delay(0);
+      const arr = REVIEWS[targetId];
+      if (!arr || arr[reviewIndex] === undefined) return { ok: false, error: 'not_found' };
+      arr[reviewIndex].reply = replyText;
+      if (global.Store.ReviewReplies) global.Store.ReviewReplies.set(targetId, reviewIndex, replyText);
+      return { ok: true };
+    },
+
+    // ---- Admin statistics --------------------------------------
+    async getAdminStats() {
+      // TODO(backend): return fetch('/api/admin/stats').then(r => r.json());
+      await delay(0);
+      const allReservations = global.Store.Reservations.listIncludingHistory
+        ? global.Store.Reservations.listIncludingHistory()
+        : global.Store.Reservations.list();
+
+      const artworkStats = ARTWORKS.map(a => ({
+        id: a.id,
+        title: a.title,
+        artist: a.artist,
+        likes: a.stats?.likes || 0,
+        views: a.stats?.views || 0,
+        reviewCount: (REVIEWS[a.id] || []).length || a.stats?.reviewCount || 0,
+      }));
+
+      const workshopStats = WORKSHOPS.map(w => {
+        const reviews = REVIEWS[w.id] || [];
+        const avg = reviews.length
+          ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+          : (w.stats?.rating || 0).toFixed(1);
+        const liveRes = allReservations.filter(r => r.workshopId === w.id).length;
+        const baseRes = Math.round((w.stats?.occupancy || 0) * (w.capacity || 10) * 6);
+        return {
+          id: w.id,
+          title: w.title,
+          instructor: w.instructor,
+          occupancy: w.stats?.occupancy || 0,
+          avgRating: avg,
+          reviewCount: reviews.length || w.stats?.reviewCount || 0,
+          totalReservations: liveRes + baseRes,
+        };
+      });
+
+      // Flatten all reviews with target metadata for admin management
+      const allReviews = [];
+      const storedReplies = global.Store.ReviewReplies ? global.Store.ReviewReplies.map() : {};
+      ARTWORKS.forEach(a => {
+        (REVIEWS[a.id] || []).forEach((r, idx) => {
+          const persisted = storedReplies[a.id] && storedReplies[a.id][String(idx)];
+          allReviews.push(Object.assign({}, r, {
+            reply: persisted !== undefined ? persisted : (r.reply || ''),
+            targetId: a.id, targetTitle: a.title, targetType: 'Artwork', reviewIndex: idx,
+          }));
+        });
+      });
+      WORKSHOPS.forEach(w => {
+        (REVIEWS[w.id] || []).forEach((r, idx) => {
+          const persisted = storedReplies[w.id] && storedReplies[w.id][String(idx)];
+          allReviews.push(Object.assign({}, r, {
+            reply: persisted !== undefined ? persisted : (r.reply || ''),
+            targetId: w.id, targetTitle: w.title, targetType: 'Workshop', reviewIndex: idx,
+          }));
+        });
+      });
+
+      return { artworkStats, workshopStats, allReviews };
     },
 
     // ---- Orders ------------------------------------------------
@@ -706,6 +827,59 @@
       },
     },
 
+    // ---- Support & Live Chat (Req 10) -------------------------
+    async listSupportTickets() {
+      // TODO(backend): return fetch('/api/support/tickets').then(r => r.json());
+      await delay(0);
+      // User-submitted tickets first, then the static demo set
+      return global.Store.SupportTickets.list().concat(SUPPORT_TICKETS);
+    },
+    async submitSupportTicket(payload) {
+      // TODO(backend): POST /api/support/tickets
+      await delay(0);
+      if (!payload || !payload.email || !payload.subject || !payload.message) {
+        return { ok: false, error: 'missing_fields' };
+      }
+      const ticket = global.Store.SupportTickets.add(payload);
+      return { ok: true, ticket };
+    },
+    async listChatMessages() {
+      // TODO(backend): return fetch('/api/chat/messages').then(r => r.json());
+      await delay(0);
+      return global.Store.ChatMessages.list();
+    },
+    async sendChatMessage(text) {
+      // TODO(backend): POST /api/chat/messages — pushes to server, replies via WebSocket
+      await delay(0);
+      if (!text || !text.trim()) return { ok: false, error: 'empty' };
+      const userMsg = global.Store.ChatMessages.add({ from: 'user', text: text.trim() });
+      // Simulate a brief auto-reply from the curator (frontend-only).
+      const reply = pickAutoReply(text);
+      setTimeout(() => global.Store.ChatMessages.add({ from: 'curator', text: reply }), 600);
+      return { ok: true, message: userMsg };
+    },
+
+    // ---- Campaigns & Offers (Req 9) ---------------------------
+    async listCampaignArtworks() {
+      // TODO(backend): return fetch('/api/campaign/artworks').then(r => r.json());
+      await delay(0);
+      return ARTWORKS.filter(a => a.campaign);
+    },
+    async listCampaignWorkshops() {
+      // TODO(backend): return fetch('/api/campaign/workshops').then(r => r.json());
+      await delay(0);
+      return WORKSHOPS.filter(w => w.campaign);
+    },
+    async listOffers(userEmail) {
+      // TODO(backend): return fetch(`/api/offers?email=${userEmail||''}`).then(r => r.json());
+      await delay(0);
+      const personal = userEmail ? (OFFERS[userEmail.toLowerCase()] || []) : [];
+      // De-duplicate by code; personal overrides public
+      const seen = new Set(personal.map(o => o.code));
+      const publicOffers = OFFERS.public.filter(o => !seen.has(o.code));
+      return personal.concat(publicOffers);
+    },
+
     // Coupons
     async validateCoupon(code) {
       // TODO(backend): return fetch(`/api/coupons/${code}`).then(r => r.json());
@@ -716,7 +890,7 @@
   };
 
   global.GALLERY = Object.assign(global.GALLERY || {}, {
-    ARTWORKS, WORKSHOPS, REVIEWS, ORDERS, SUPPORT_TICKETS, COUPONS,
+    ARTWORKS, WORKSHOPS, REVIEWS, ORDERS, SUPPORT_TICKETS, COUPONS, OFFERS,
     getArtwork, getWorkshop, getReviews, getOrder,
     api,
   });

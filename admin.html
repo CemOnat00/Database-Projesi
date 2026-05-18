@@ -85,7 +85,7 @@
           <h2 class="font-display text-2xl text-ink-strong">Top Workshops</h2>
         </div>
         <table class="w-full text-sm">
-          <thead class="bg-bg-soft text-[11px] uppercase tracking-lux text-ink-muted"><tr><th class="text-left px-6 py-3">Workshop</th><th class="text-right py-3">Occupancy</th><th class="text-right py-3">Avg ★</th><th class="text-right py-3 pr-6">Reviews</th></tr></thead>
+          <thead class="bg-bg-soft text-[11px] uppercase tracking-lux text-ink-muted"><tr><th class="text-left px-6 py-3">Workshop</th><th class="text-right py-3">Occupancy</th><th class="text-right py-3">Avg ★</th><th class="text-right py-3">Reviews</th><th class="text-right py-3 pr-6">Reservations</th></tr></thead>
           <tbody id="top-workshops" class="divide-y divide-line text-ink-strong"></tbody>
         </table>
       </div>
@@ -95,6 +95,31 @@
       <h2 class="font-display text-2xl text-ink-strong mb-6">Recent Activity</h2>
       <ul id="activity" class="divide-y divide-line"></ul>
     </section>
+
+    <!-- SUMMARY REPORT (Req 16) -->
+    <section class="mt-8 bg-surface border border-line p-8">
+      <div class="flex items-end justify-between mb-6">
+        <div>
+          <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-1">Analytics</p>
+          <h2 class="font-display text-2xl text-ink-strong">Summary Report</h2>
+        </div>
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted">All-time aggregates</p>
+      </div>
+      <div id="summary-report"></div>
+    </section>
+
+    <!-- REVIEWS MANAGEMENT (Req 14) -->
+    <section class="mt-8 bg-surface border border-line">
+      <div class="p-6 border-b border-line flex items-center justify-between">
+        <div>
+          <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-1">Content Management</p>
+          <h2 class="font-display text-2xl text-ink-strong">Reviews &amp; Curator Replies</h2>
+        </div>
+        <span id="reviews-pending-badge" class="hidden text-[10px] uppercase tracking-lux text-white bg-accent px-3 py-1.5 rounded-sm"></span>
+      </div>
+      <div id="reviews-mgmt-list"></div>
+    </section>
+
   </main>
 
   <div id="footer-root"></div>

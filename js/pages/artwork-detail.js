@@ -8,6 +8,7 @@
 
   let artwork = null;
   let userRating = 0;
+  let reviewSort = 'recent'; // 'recent' | 'rating' | 'helpful'
 
   Utils.onReady(function () {
     const idParam = Utils.paramId('id');
@@ -135,8 +136,6 @@
     Utils.qs('#artist-bio').textContent = artwork.artistBio
       || 'Biographical details for this artist are being prepared. Write to the curator for an introduction.';
 
-    // Other works by same artist (excluding current). If none, fall back to gallery picks
-    // with a different heading so the section stays honest.
     const others = GALLERY.ARTWORKS.filter(a => a.artist === artwork.artist && a.id !== artwork.id).slice(0, 3);
     const heading = Utils.qs('#artist-other-heading');
     let otherList = others;
@@ -155,8 +154,21 @@
       </a>
     `).join('');
 
-    // Reviews
-    const reviews = GALLERY.getReviews(artwork.id);
+    // Reviews — sorted via API, sort select hooked up, helpful clickable
+    renderReviewList();
+
+    // Bind the sort dropdown (Req 13)
+    const sortEl = Utils.qs('#review-sort');
+    if (sortEl) {
+      sortEl.addEventListener('change', e => {
+        reviewSort = ({ 'Most Recent': 'recent', 'Highest Rated': 'rating', 'Most Helpful': 'helpful' })[e.target.value] || 'recent';
+        renderReviewList();
+      });
+    }
+  }
+
+  async function renderReviewList() {
+    const reviews = await GALLERY.api.listReviews(artwork.id, reviewSort);
     const avg = reviews.length
       ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
       : '0.0';
@@ -166,14 +178,68 @@
     const list = Utils.qs('#review-list');
     if (reviews.length === 0) {
       list.innerHTML = `<p class="text-ink-muted italic">No reviews yet — be the first to share an impression.</p>`;
-    } else {
-      list.innerHTML = reviews.map(reviewCard).join('');
+      return;
     }
+    // We need indexes that map back into GALLERY.REVIEWS[artwork.id] so the helpful
+    // counter increments the correct record regardless of current sort order.
+    const original = GALLERY.getReviews(artwork.id);
+    list.innerHTML = reviews.map(r => {
+      const realIdx = original.indexOf(r);
+      return reviewCard(r, realIdx);
+    }).join('');
+
+    Utils.qsa('.helpful-btn', list).forEach(b => b.addEventListener('click', async () => {
+      const idx = Number(b.getAttribute('data-idx'));
+      const result = await GALLERY.api.toggleReviewHelpful(artwork.id, idx);
+      if (!result.ok) return;
+      Utils.toast(result.on ? 'Marked helpful' : 'Vote removed');
+      renderReviewList();
+    }));
+
+    // Admin reply toggle
+    Utils.qsa('.reply-toggle', list).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('[data-review-idx]');
+        const form = card.querySelector('.reply-form');
+        if (!form) return;
+        form.classList.toggle('hidden');
+        if (!form.classList.contains('hidden')) {
+          const input = form.querySelector('.reply-input');
+          if (input) input.focus();
+        }
+      });
+    });
+
+    // Admin reply save
+    Utils.qsa('.reply-save', list).forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('[data-review-idx]');
+        const idx = Number(btn.getAttribute('data-idx'));
+        const input = card.querySelector('.reply-input');
+        const text = (input ? input.value : '').trim();
+        if (!text) { Utils.toast('Reply text is required'); return; }
+        const result = await GALLERY.api.replyToReview(artwork.id, idx, text);
+        if (!result.ok) { Utils.toast('Could not save reply'); return; }
+        Utils.toast('Curator reply saved');
+        renderReviewList();
+      });
+    });
+
+    // Admin reply cancel
+    Utils.qsa('.reply-cancel', list).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('[data-review-idx]');
+        card.querySelector('.reply-form')?.classList.add('hidden');
+      });
+    });
   }
 
-  function reviewCard(r) {
+  function reviewCard(r, idx) {
+    const voted = Store.ReviewVotes.has(`${artwork.id}:${idx}`);
+    const isAdmin = Store.User.isAdmin();
+    const hasReply = !!r.reply;
     return `
-      <article class="bg-surface border border-line p-7">
+      <article class="bg-surface border border-line p-7" data-review-idx="${idx}">
         <header class="flex justify-between items-start mb-3">
           <div>
             <h3 class="font-display text-lg text-ink-strong">${Utils.escapeHTML(r.author)}</h3>
@@ -183,20 +249,72 @@
         </header>
         <div class="flex gap-0.5 text-accent mb-3">${Utils.stars(r.rating, 13)}</div>
         <p class="font-display italic text-ink-strong leading-relaxed">${Utils.escapeHTML(r.body)}</p>
-        ${r.reply ? `
-          <div class="mt-5 bg-bg-soft border-l-2 border-brand p-4">
+        ${hasReply ? `
+          <div class="reply-display mt-5 bg-bg-soft border-l-2 border-brand p-4">
             <p class="text-[10px] uppercase tracking-lux text-ink-muted mb-1">Curator's Response</p>
             <p class="text-sm text-ink-strong">${Utils.escapeHTML(r.reply)}</p>
-          </div>` : ''
+          </div>` : `<div class="reply-display hidden mt-5 bg-bg-soft border-l-2 border-brand p-4"><p class="text-[10px] uppercase tracking-lux text-ink-muted mb-1">Curator's Response</p><p class="text-sm text-ink-strong reply-text"></p></div>`
         }
+        ${isAdmin ? `
+          <div class="reply-form hidden mt-4 bg-bg-soft border border-line p-4">
+            <textarea class="reply-input w-full text-sm border border-line p-2 bg-transparent focus:outline-none focus:border-brand resize-none" rows="2" placeholder="Write a curator's response…">${hasReply ? Utils.escapeHTML(r.reply) : ''}</textarea>
+            <div class="flex gap-2 mt-2">
+              <button type="button" class="reply-save bg-brand hover:bg-brand-hover text-white px-4 py-2 text-[11px] uppercase tracking-lux transition-colors" data-idx="${idx}">Save Reply</button>
+              <button type="button" class="reply-cancel border border-line px-4 py-2 text-[11px] uppercase tracking-lux text-ink-muted hover:border-brand" data-idx="${idx}">Cancel</button>
+            </div>
+          </div>` : ''}
         <div class="mt-4 flex gap-4 text-[11px] uppercase tracking-lux text-ink-muted">
-          <button class="hover:text-brand">▲ Helpful (${r.helpful || 0})</button>
-          <button class="hover:text-brand">Reply</button>
+          <button class="helpful-btn hover:text-brand ${voted ? 'text-brand' : ''}" data-idx="${idx}">▲ Helpful (${r.helpful || 0})</button>
+          ${isAdmin ? `<button class="reply-toggle hover:text-brand" data-idx="${idx}">${hasReply ? 'Edit Reply' : '↳ Reply'}</button>` : ''}
         </div>
       </article>`;
   }
 
+  // Check if current user has purchased this artwork (local orders + demo orders)
+  function userHasBought() {
+    const allOrders = Store.Orders.list().concat(GALLERY.ORDERS);
+    return allOrders.some(o => (o.items || []).some(it => it.type === 'artwork' && it.refId === artwork.id));
+  }
+
+  // Show/hide the review form based on auth state and purchase verification (Req 15)
+  function renderReviewFormGate() {
+    const form = Utils.qs('#review-form');
+    const gateMsg = Utils.qs('#review-gate-msg');
+    if (!form) return;
+
+    const submitBtn = form.querySelector('[type=submit]');
+    const user = Store.User.get();
+
+    if (!user) {
+      if (submitBtn) submitBtn.disabled = true;
+      if (gateMsg) {
+        gateMsg.innerHTML = `<a href="auth.html?next=${encodeURIComponent(location.pathname + location.search)}" class="text-brand hover:underline">Sign in</a> to review. Only verified buyers may write a review.`;
+        gateMsg.className = 'text-sm text-ink-muted mb-6';
+      }
+      return;
+    }
+
+    if (!userHasBought()) {
+      if (submitBtn) submitBtn.disabled = true;
+      if (gateMsg) {
+        gateMsg.innerHTML = `Reviews are open to verified buyers only. If you own this work, <a href="support.html" class="text-brand hover:underline">contact us</a> to verify your purchase.`;
+        gateMsg.className = 'text-sm text-ink-muted mb-6';
+      }
+      return;
+    }
+
+    // Authed verified buyer — unlock the form
+    if (submitBtn) submitBtn.disabled = false;
+    if (gateMsg) {
+      gateMsg.textContent = 'You own this work — your review will be marked as Verified Buyer.';
+      gateMsg.className = 'text-[11px] uppercase tracking-lux text-brand mb-6';
+    }
+  }
+
   function bindForms() {
+    renderReviewFormGate();
+    Store.subscribe('user', renderReviewFormGate);
+
     // Star rating
     Utils.qsa('.star').forEach(s => s.addEventListener('click', () => {
       userRating = Number(s.getAttribute('data-r'));
@@ -207,19 +325,33 @@
       });
     }));
 
-    Utils.qs('#review-form').addEventListener('submit', e => {
+    Utils.qs('#review-form').addEventListener('submit', async e => {
       e.preventDefault();
       if (userRating === 0) { Utils.toast('Please pick a star rating'); return; }
       if (!Store.User.isAuthed()) {
-        // Hint at requirement #15 (only signed-in users)
         Utils.toast('Sign-in required — opening login');
-        setTimeout(() => location.href = 'auth.html', 800);
+        setTimeout(() => location.href = 'auth.html?next=' + encodeURIComponent(location.pathname + location.search), 800);
         return;
       }
-      Utils.toast('Review submitted for moderation');
+      // Req 15: enforce verified-buyer gate on submit too
+      if (!userHasBought()) {
+        Utils.toast('Only verified buyers may review this work');
+        return;
+      }
+      const fd = new FormData(e.target);
+      const author = (fd.get('display') || Store.User.get().name || 'Anonymous').toString().trim();
+      const body = (fd.get('body') || '').toString().trim();
+      if (!body) { Utils.toast('Please share a few words'); return; }
+
+      const result = await GALLERY.api.createReview(artwork.id, {
+        author, body, rating: userRating, verified: true,
+      });
+      if (!result.ok) { Utils.toast('Could not submit review'); return; }
+      Utils.toast('Review submitted — marked as Verified Buyer');
       e.target.reset();
       userRating = 0;
       Utils.qsa('.star').forEach(x => { x.classList.remove('text-accent'); x.classList.add('text-line'); });
+      renderReviewList();
     });
   }
 })();

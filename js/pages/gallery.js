@@ -81,10 +81,27 @@
 
   function card(a) {
     const fav = Store.Favorites.has(a.id);
+    const camp = a.campaign;
+    const campClass = camp && camp.type === 'sale' ? 'bg-accent text-white'
+                    : camp && camp.type === 'new'  ? 'bg-brand text-white'
+                    : 'bg-ink-strong text-white';
+    const campaignBadge = camp
+      ? `<span class="absolute top-4 right-4 ${campClass} px-3 py-1 text-[10px] uppercase tracking-lux z-10">${Utils.escapeHTML(camp.label)}</span>`
+      : '';
+    const soldBadge = a.sold
+      ? '<span class="absolute top-4 right-4 bg-ink-strong text-white px-3 py-1 text-[10px] uppercase tracking-lux z-10">Sold</span>'
+      : '';
+    // sold overrides campaign on the same corner
+    const cornerBadge = a.sold ? soldBadge : campaignBadge;
+
+    // Compute campaign-discounted price
+    const hasSale = camp && camp.type === 'sale' && camp.pct;
+    const salePrice = hasSale ? Math.round(a.price * (100 - camp.pct) / 100) : null;
+
     return `
       <a href="artwork-detail.html?id=${a.id}" class="group block">
         <div class="relative overflow-hidden bg-bg-image ${a.aspect}">
-          ${a.sold ? '<span class="absolute top-4 right-4 bg-ink-strong text-white px-3 py-1 text-[10px] uppercase tracking-lux z-10">Sold</span>' : ''}
+          ${cornerBadge}
           <span class="absolute top-4 left-4 bg-bg/90 px-3 py-1 text-[10px] uppercase tracking-lux z-10">${Utils.escapeHTML(a.mediumShort)}</span>
           <img src="${Utils.img(a.images[0], 900)}" alt="${Utils.escapeHTML(a.title)}" class="w-full h-full object-cover img-zoom ${a.sold ? 'opacity-70' : ''}" />
           <button data-id="${a.id}" aria-label="Toggle favorite" class="fav-btn absolute bottom-4 right-4 w-10 h-10 bg-bg/90 hover:bg-white flex items-center justify-center transition-colors ${fav ? 'text-accent' : 'text-ink-strong'}">
@@ -96,7 +113,11 @@
             <h3 class="font-display text-xl text-ink-strong">${Utils.escapeHTML(a.title)}</h3>
             <p class="text-[11px] uppercase tracking-lux text-ink-muted mt-1">${Utils.escapeHTML(a.artist)}</p>
           </div>
-          <p class="${a.sold ? 'text-ink-muted line-through' : 'text-brand'}">${Utils.fmtMoney(a.price)}</p>
+          <p class="${a.sold ? 'text-ink-muted line-through' : 'text-brand'}">
+            ${hasSale && !a.sold
+              ? `<span class="line-through text-ink-muted text-sm mr-1">${Utils.fmtMoney(a.price)}</span><span class="text-accent">${Utils.fmtMoney(salePrice)}</span>`
+              : Utils.fmtMoney(a.price)}
+          </p>
         </div>
       </a>`;
   }

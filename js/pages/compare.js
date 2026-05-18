@@ -109,36 +109,55 @@
       </a>`).join('');
   }
 
+  function cap(s) { return String(s || '').replace(/^./, c => c.toUpperCase()); }
+
   function renderArtAttrs() {
+    // Req 11: "kategori, fiyat ve sanatçı açısından" + medium/dimensions/year
     const fields = [
-      { label: 'Artist',     key: 'artist' },
-      { label: 'Medium',     key: 'medium' },
-      { label: 'Dimensions', key: 'dimensions' },
-      { label: 'Year',       key: 'year' },
-      { label: 'Price',      key: 'price', fmt: v => Utils.fmtMoney(v) },
+      { label: 'Artist',     get: a => Utils.escapeHTML(a.artist) },
+      { label: 'Category',   get: a => Utils.escapeHTML(cap(a.category)) },
+      { label: 'Medium',     get: a => Utils.escapeHTML(a.medium) },
+      { label: 'Dimensions', get: a => Utils.escapeHTML(a.dimensions) },
+      { label: 'Year',       get: a => a.year },
+      { label: 'Price',      get: a => {
+          if (a.campaign && a.campaign.type === 'sale' && a.campaign.pct) {
+            const sale = Math.round(a.price * (100 - a.campaign.pct) / 100);
+            return `<span class="line-through text-ink-muted text-xs mr-1">${Utils.fmtMoney(a.price)}</span><span class="text-accent">${Utils.fmtMoney(sale)}</span>`;
+          }
+          return a.sold ? `<span class="line-through text-ink-muted">${Utils.fmtMoney(a.price)}</span> · Sold` : Utils.fmtMoney(a.price);
+        } },
     ];
     Utils.qs('#art-attrs').innerHTML = fields.map(f => `
       <div class="grid grid-cols-4 border-b border-line">
         <div class="p-4 text-[11px] uppercase tracking-lux text-ink-muted bg-bg">${f.label}</div>
-        ${artworks.map(a => `<div class="p-4 text-sm text-ink-strong">${f.fmt ? f.fmt(a[f.key]) : Utils.escapeHTML(String(a[f.key] ?? '—'))}</div>`).join('')}
+        ${artworks.map(a => `<div class="p-4 text-sm text-ink-strong">${f.get(a)}</div>`).join('')}
         ${Array(3 - artworks.length).fill('<div class="p-4 text-ink-faint">—</div>').join('')}
       </div>
     `).join('');
   }
 
   function renderEventAttrs() {
+    // Req 11: "tarih, ücret ve kontenjan açısından"
     const fields = [
-      { label: 'Instructor', key: 'instructor' },
-      { label: 'Level',      key: 'level' },
-      { label: 'Date',       key: 'sessions', fmt: v => (v && v[0] && v[0].dateLong) || '—' },
-      { label: 'Capacity',   key: 'capacity' },
-      { label: 'Rating',     key: 'stats', fmt: v => (v && v.rating) || '—' },
-      { label: 'Price',      key: 'price', fmt: v => v ? Utils.fmtMoney(v) : 'Complimentary' },
+      { label: 'Instructor', get: w => Utils.escapeHTML(w.instructor) },
+      { label: 'Level',      get: w => Utils.escapeHTML(w.level) },
+      { label: 'Date',       get: w => Utils.escapeHTML((w.sessions && w.sessions[0] && w.sessions[0].dateLong) || '—') },
+      { label: 'Time',       get: w => Utils.escapeHTML((w.sessions && w.sessions[0] && w.sessions[0].time) || '—') },
+      { label: 'Capacity',   get: w => `${w.spotsLeft} of ${w.capacity} seats` },
+      { label: 'Rating',     get: w => (w.stats && w.stats.rating) ? `${w.stats.rating} ★` : '—' },
+      { label: 'Price',      get: w => {
+          if (w.complimentary || !w.price) return 'Complimentary';
+          if (w.campaign && w.campaign.type === 'sale' && w.campaign.pct) {
+            const sale = Math.round(w.price * (100 - w.campaign.pct) / 100);
+            return `<span class="line-through text-ink-muted text-xs mr-1">${Utils.fmtMoney(w.price)}</span><span class="text-accent">${Utils.fmtMoney(sale)}</span>`;
+          }
+          return Utils.fmtMoney(w.price);
+        } },
     ];
     Utils.qs('#ev-attrs').innerHTML = fields.map(f => `
       <div class="grid grid-cols-4 border-b border-line">
         <div class="p-4 text-[11px] uppercase tracking-lux text-ink-muted bg-bg">${f.label}</div>
-        ${events.map(w => `<div class="p-4 text-sm text-ink-strong">${f.fmt ? f.fmt(w[f.key]) : Utils.escapeHTML(String(w[f.key] ?? '—'))}</div>`).join('')}
+        ${events.map(w => `<div class="p-4 text-sm text-ink-strong">${f.get(w)}</div>`).join('')}
         ${Array(3 - events.length).fill('<div class="p-4 text-ink-faint">—</div>').join('')}
       </div>
     `).join('');

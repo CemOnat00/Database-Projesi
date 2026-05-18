@@ -177,10 +177,75 @@
   const Comparisons = {
     save(label, payload) {
       const list = read('comparisons', []);
-      list.push({ id: 'C' + Date.now(), label, payload, savedAt: new Date().toISOString() });
+      const entry = { id: 'C' + Date.now(), label, payload, savedAt: new Date().toISOString() };
+      list.unshift(entry);
       write('comparisons', list); emit('comparisons', list);
+      return entry;
     },
     list() { return read('comparisons', []); },
+    remove(id) {
+      const list = Comparisons.list().filter(c => c.id !== id);
+      write('comparisons', list); emit('comparisons', list);
+    },
+  };
+
+  /* ---- Support tickets (user-submitted) ---------------------- */
+  const SupportTickets = {
+    list() { return read('support_tickets', []); },
+    add(payload) {
+      const list = SupportTickets.list();
+      const ticket = Object.assign({
+        id: Math.floor(3900 + Math.random() * 100),
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        status: 'Open',
+      }, payload);
+      list.unshift(ticket);
+      write('support_tickets', list); emit('support_tickets', list);
+      return ticket;
+    },
+  };
+
+  /* ---- Live chat messages ------------------------------------ */
+  const ChatMessages = {
+    list() { return read('chat_messages', []); },
+    add(msg) {
+      const list = ChatMessages.list();
+      const entry = Object.assign({ id: 'M' + Date.now(), at: new Date().toISOString() }, msg);
+      list.push(entry);
+      write('chat_messages', list); emit('chat_messages', list);
+      return entry;
+    },
+    clear() { write('chat_messages', []); emit('chat_messages', []); },
+  };
+
+  /* ---- Review votes (helpful) -------------------------------- */
+  // Key shape: `${targetId}:${reviewIndex}` → boolean
+  const ReviewVotes = {
+    map() { return read('review_votes', {}); },
+    has(key) { return !!ReviewVotes.map()[key]; },
+    toggle(key) {
+      const m = ReviewVotes.map();
+      m[key] = !m[key];
+      write('review_votes', m); emit('review_votes', m);
+      return !!m[key];
+    },
+  };
+
+  /* ---- Review replies (admin-written, persisted) ------------ */
+  // shape: { [targetId]: { [String(idx)]: replyText } }
+  const ReviewReplies = {
+    map() { return read('review_replies', {}); },
+    set(targetId, idx, text) {
+      const m = ReviewReplies.map();
+      if (!m[targetId]) m[targetId] = {};
+      m[targetId][String(idx)] = text;
+      write('review_replies', m); emit('review_replies', m);
+    },
+    get(targetId, idx) {
+      const m = ReviewReplies.map();
+      const v = m[targetId] && m[targetId][String(idx)];
+      return v !== undefined ? v : null;
+    },
   };
 
   /* ---- User session simulation ------------------------------- */
@@ -189,6 +254,11 @@
     set(profile) { write('user', profile); emit('user', profile); },
     clear() { write('user', null); emit('user', null); },
     isAuthed() { return !!User.get(); },
+    // Admin: role flag OR demo curator email
+    isAdmin() {
+      const u = User.get();
+      return !!u && (u.role === 'admin' || (u.email || '').toLowerCase() === 'cem@example.com');
+    },
   };
 
   /* ---- Last order (for confirmation page) -------------------- */
@@ -197,5 +267,5 @@
     get() { return read('lastOrder', null); },
   };
 
-  global.Store = { subscribe, emit, Cart, Favorites, Reservations, Waitlist, Orders, Users, Comparisons, User, LastOrder };
+  global.Store = { subscribe, emit, Cart, Favorites, Reservations, Waitlist, Orders, Users, Comparisons, SupportTickets, ChatMessages, ReviewVotes, ReviewReplies, User, LastOrder };
 })(window);

@@ -15,6 +15,8 @@
 
   let workshop = null;
   let availableSessions = []; // bugünden sonraki oturumlar
+  let userRating = 0;
+  let reviewSort = 'recent';
   const state = {
     participants: 1,
     selectedSlot: 0,
@@ -48,6 +50,8 @@
     renderInstructor();
     selectMode();
     renderReviews();
+    bindReviewForm();
+    bindReviewSort();
     bindGlobals();
     refresh();
   }
@@ -423,33 +427,191 @@
     document.body.style.overflow = '';
   }
 
-  /* ---- Reviews ---------------------------------------------- */
+  /* ---- Reviews (Req 12 + 13 + 14) -------------------------- */
   async function renderReviews() {
     const list = Utils.qs('#review-list');
-    const reviews = await GALLERY.api.listReviews(workshop.id);
+    const reviews = await GALLERY.api.listReviews(workshop.id, reviewSort);
+
     if (reviews.length === 0) {
       list.innerHTML = '<p class="md:col-span-2 text-ink-muted italic">No reviews yet for this workshop.</p>';
       Utils.qs('#review-summary').innerHTML = '<p class="text-sm text-ink-muted">Be the first to attend.</p>';
       return;
     }
-    list.innerHTML = reviews.map(r => `
-      <article class="bg-surface border border-line p-8">
-        <header class="flex items-start justify-between mb-4">
-          <div>
-            <h3 class="font-display text-lg text-ink-strong">${Utils.escapeHTML(r.author)}</h3>
-            <p class="text-[11px] uppercase tracking-lux text-ink-muted mt-1">${Utils.escapeHTML(r.date)}</p>
+    const original = GALLERY.getReviews(workshop.id);
+    const isAdmin = Store.User.isAdmin();
+
+    list.innerHTML = reviews.map(r => {
+      const idx = original.indexOf(r);
+      const voted = Store.ReviewVotes.has(`${workshop.id}:${idx}`);
+      const hasReply = !!r.reply;
+      return `
+        <article class="bg-surface border border-line p-8" data-review-idx="${idx}">
+          <header class="flex items-start justify-between mb-4">
+            <div>
+              <h3 class="font-display text-lg text-ink-strong">${Utils.escapeHTML(r.author)}</h3>
+              <p class="text-[11px] uppercase tracking-lux text-ink-muted mt-1">${Utils.escapeHTML(r.date)}</p>
+            </div>
+            ${r.verified ? '<span class="text-[10px] uppercase tracking-lux text-accent border border-accent/30 px-2 py-1">Verified Attendee</span>' : ''}
+          </header>
+          <div class="flex items-center gap-0.5 text-accent mb-4">${Utils.stars(r.rating, 14)}</div>
+          <p class="font-display italic text-ink-strong leading-relaxed">"${Utils.escapeHTML(r.body)}"</p>
+          ${hasReply ? `<div class="reply-display mt-6 bg-bg-soft border-l-2 border-brand p-4">
+            <p class="text-[10px] uppercase tracking-lux text-ink-muted mb-2">Curator's Response</p>
+            <p class="text-sm text-ink-strong leading-relaxed">${Utils.escapeHTML(r.reply)}</p>
+          </div>` : `<div class="reply-display hidden mt-6 bg-bg-soft border-l-2 border-brand p-4"><p class="text-[10px] uppercase tracking-lux text-ink-muted mb-2">Curator's Response</p><p class="text-sm text-ink-strong"></p></div>`}
+          ${isAdmin ? `
+          <div class="reply-form hidden mt-4 bg-bg-soft border border-line p-4">
+            <textarea class="reply-input w-full text-sm border border-line p-2 bg-transparent focus:outline-none focus:border-brand resize-none" rows="2" placeholder="Write a curator's response…">${hasReply ? Utils.escapeHTML(r.reply) : ''}</textarea>
+            <div class="flex gap-2 mt-2">
+              <button type="button" class="reply-save bg-brand hover:bg-brand-hover text-white px-4 py-2 text-[11px] uppercase tracking-lux transition-colors" data-idx="${idx}">Save Reply</button>
+              <button type="button" class="reply-cancel border border-line px-4 py-2 text-[11px] uppercase tracking-lux text-ink-muted hover:border-brand" data-idx="${idx}">Cancel</button>
+            </div>
+          </div>` : ''}
+          <div class="mt-5 flex gap-4 text-[11px] uppercase tracking-lux text-ink-muted">
+            <button class="helpful-btn hover:text-brand ${voted ? 'text-brand' : ''}" data-idx="${idx}">▲ Helpful (${r.helpful || 0})</button>
+            ${isAdmin ? `<button class="reply-toggle hover:text-brand" data-idx="${idx}">${hasReply ? 'Edit Reply' : '↳ Reply'}</button>` : ''}
           </div>
-          ${r.verified ? '<span class="text-[10px] uppercase tracking-lux text-accent border border-accent/30 px-2 py-1">Verified Attendee</span>' : ''}
-        </header>
-        <div class="flex items-center gap-0.5 text-accent mb-4">${Utils.stars(r.rating, 14)}</div>
-        <p class="font-display italic text-ink-strong leading-relaxed">"${Utils.escapeHTML(r.body)}"</p>
-        ${r.reply ? `<div class="mt-6 bg-bg-soft border-l-2 border-brand p-4">
-          <p class="text-[10px] uppercase tracking-lux text-ink-muted mb-2">Curator's Response</p>
-          <p class="text-sm text-ink-strong leading-relaxed">${Utils.escapeHTML(r.reply)}</p>
-        </div>` : ''}
-      </article>`).join('');
+        </article>`;
+    }).join('');
 
     const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
     Utils.qs('#review-summary').innerHTML = `<div class="flex items-center gap-1 text-accent">${Utils.stars(Math.round(avg), 18)}</div><p class="text-sm text-ink-strong"><strong>${avg}</strong> <span class="text-ink-muted">· based on ${reviews.length} reviews</span></p>`;
+
+    Utils.qsa('.helpful-btn', list).forEach(b => b.addEventListener('click', async () => {
+      const idx = Number(b.getAttribute('data-idx'));
+      const result = await GALLERY.api.toggleReviewHelpful(workshop.id, idx);
+      if (!result.ok) return;
+      Utils.toast(result.on ? 'Marked helpful' : 'Vote removed');
+      renderReviews();
+    }));
+
+    // Admin reply actions
+    Utils.qsa('.reply-toggle', list).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('[data-review-idx]');
+        const form = card.querySelector('.reply-form');
+        if (!form) return;
+        form.classList.toggle('hidden');
+        if (!form.classList.contains('hidden')) {
+          const input = form.querySelector('.reply-input');
+          if (input) input.focus();
+        }
+      });
+    });
+    Utils.qsa('.reply-save', list).forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('[data-review-idx]');
+        const idx = Number(btn.getAttribute('data-idx'));
+        const input = card.querySelector('.reply-input');
+        const text = (input ? input.value : '').trim();
+        if (!text) { Utils.toast('Reply text is required'); return; }
+        const result = await GALLERY.api.replyToReview(workshop.id, idx, text);
+        if (!result.ok) { Utils.toast('Could not save reply'); return; }
+        Utils.toast('Curator reply saved');
+        renderReviews();
+      });
+    });
+    Utils.qsa('.reply-cancel', list).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('[data-review-idx]');
+        card.querySelector('.reply-form')?.classList.add('hidden');
+      });
+    });
+  }
+
+  function bindReviewSort() {
+    const sortEl = Utils.qs('#review-sort');
+    if (!sortEl) return;
+    sortEl.addEventListener('change', e => {
+      reviewSort = ({ 'Most Recent': 'recent', 'Highest Rated': 'rating', 'Most Helpful': 'helpful' })[e.target.value] || 'recent';
+      renderReviews();
+    });
+  }
+
+  // Req 15: user must have a reservation for this workshop to review it
+  function userHasAttended() {
+    const allRes = Store.Reservations.listIncludingHistory
+      ? Store.Reservations.listIncludingHistory()
+      : Store.Reservations.list();
+    return allRes.some(r => r.workshopId === workshop.id);
+  }
+
+  // Show/hide workshop review form based on auth + attendance (Req 15)
+  function renderWorkshopReviewGate() {
+    const form = Utils.qs('#review-form');
+    const gateMsg = Utils.qs('#workshop-review-gate-msg');
+    if (!form) return;
+
+    const submitBtn = form.querySelector('[type=submit]');
+    const user = Store.User.get();
+
+    if (!user) {
+      if (submitBtn) submitBtn.disabled = true;
+      if (gateMsg) {
+        gateMsg.innerHTML = `<a href="auth.html?next=${encodeURIComponent(location.pathname + location.search)}" class="text-brand hover:underline">Sign in</a> to review. Only verified attendees may write a review.`;
+        gateMsg.className = 'text-sm text-ink-muted mb-6';
+      }
+      return;
+    }
+
+    if (!userHasAttended()) {
+      if (submitBtn) submitBtn.disabled = true;
+      if (gateMsg) {
+        gateMsg.innerHTML = `Reviews are open to past attendees only. <a href="workshops.html" class="text-brand hover:underline">Browse sessions</a> to register.`;
+        gateMsg.className = 'text-sm text-ink-muted mb-6';
+      }
+      return;
+    }
+
+    // Authed verified attendee — unlock
+    if (submitBtn) submitBtn.disabled = false;
+    if (gateMsg) {
+      gateMsg.textContent = 'You attended this workshop — your review will be marked as Verified Attendee.';
+      gateMsg.className = 'text-[11px] uppercase tracking-lux text-brand mb-6';
+    }
+  }
+
+  function bindReviewForm() {
+    renderWorkshopReviewGate();
+    Store.subscribe('user', renderWorkshopReviewGate);
+
+    Utils.qsa('.star').forEach(s => s.addEventListener('click', () => {
+      userRating = Number(s.getAttribute('data-r'));
+      Utils.qsa('.star').forEach(x => {
+        const r = Number(x.getAttribute('data-r'));
+        x.classList.toggle('text-accent', r <= userRating);
+        x.classList.toggle('text-line', r > userRating);
+      });
+    }));
+
+    Utils.qs('#review-form')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (userRating === 0) { Utils.toast('Please pick a star rating'); return; }
+      if (!Store.User.isAuthed()) {
+        Utils.toast('Sign-in required — opening login');
+        setTimeout(() => location.href = 'auth.html?next=' + encodeURIComponent(location.pathname + location.search), 800);
+        return;
+      }
+      // Req 15: enforce attendance gate on submit too
+      if (!userHasAttended()) {
+        Utils.toast('Only past attendees may review this workshop');
+        return;
+      }
+      const fd = new FormData(e.target);
+      const author = (fd.get('display') || Store.User.get().name || 'Anonymous').toString().trim();
+      const body = (fd.get('body') || '').toString().trim();
+      if (!body) { Utils.toast('Please share a few words'); return; }
+
+      const result = await GALLERY.api.createReview(workshop.id, {
+        author, body, rating: userRating, verified: true,
+        date: 'Attended · ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      });
+      if (!result.ok) { Utils.toast('Could not submit review'); return; }
+      Utils.toast('Review submitted — marked as Verified Attendee');
+      e.target.reset();
+      userRating = 0;
+      Utils.qsa('.star').forEach(x => { x.classList.remove('text-accent'); x.classList.add('text-line'); });
+      renderReviews();
+    });
   }
 })();
