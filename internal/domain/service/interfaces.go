@@ -16,16 +16,25 @@ type KullaniciService interface {
 type EserService interface {
 	Listele() ([]*dto.EserDTO, error)
 	DetayGetir(id uint) (*dto.EserDTO, error)
+	Olustur(req *dto.EserOlusturIstegi) (*dto.EserDTO, error)
+	Guncelle(id uint, req *dto.EserGuncelleIstegi) (*dto.EserDTO, error)
+	Sil(id uint) error
 }
 
 type SanatciService interface {
 	Listele() ([]*dto.SanatciDTO, error)
 	DetayGetir(id uint) (*dto.SanatciDTO, error)
+	Olustur(req *dto.SanatciOlusturIstegi) (*dto.SanatciDTO, error)
+	Guncelle(id uint, req *dto.SanatciGuncelleIstegi) (*dto.SanatciDTO, error)
+	Sil(id uint) error
 }
 
 type EtkinlikService interface {
 	Listele() ([]*dto.EtkinlikDTO, error)
 	DetayGetir(id uint) (*dto.EtkinlikDTO, error)
+	Olustur(req *dto.EtkinlikOlusturIstegi) (*dto.EtkinlikDTO, error)
+	Guncelle(id uint, req *dto.EtkinlikGuncelleIstegi) (*dto.EtkinlikDTO, error)
+	Sil(id uint) error
 }
 
 type RezervasyonService interface {
@@ -79,4 +88,11 @@ type IstatistikService interface {
 	EserIstatistigi(eserID uint) (*dto.EserIstatistikDTO, error)
 	EtkinlikIstatistigi(etkinlikID uint) (*dto.EtkinlikIstatistikDTO, error)
 	AdminRapor() (*dto.AdminRaporDTO, error)
+}
+
+type AdminService interface {
+	TumSiparisleri() ([]*dto.SiparisDTO, error)
+	TumRezervasyonlari() ([]*dto.RezervasyonDTO, error)
+	TumDestekTaleplerini() ([]*dto.DestekTalebiDTO, error)
+	TumKullanicilari() ([]*dto.KullaniciDTO, error)
 }

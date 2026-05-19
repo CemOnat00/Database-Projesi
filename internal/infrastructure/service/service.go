@@ -200,6 +200,55 @@ func (s *EserServiceImpl) DetayGetir(id uint) (*dto.EserDTO, error) {
 	return eserDTO(e), nil
 }
 
+func (s *EserServiceImpl) Olustur(req *dto.EserOlusturIstegi) (*dto.EserDTO, error) {
+	eser := &entity.Eser{
+		SanatciID: req.SanatciID,
+		Baslik:    req.Baslik,
+		Aciklama:  req.Aciklama,
+		GorselURL: req.GorselURL,
+		Kategori:  req.Kategori,
+		Fiyat:     req.Fiyat,
+		StokAdedi: req.StokAdedi,
+	}
+	if err := s.repo.Olustur(eser); err != nil {
+		return nil, err
+	}
+	return eserDTO(eser), nil
+}
+
+func (s *EserServiceImpl) Guncelle(id uint, req *dto.EserGuncelleIstegi) (*dto.EserDTO, error) {
+	eser, err := s.repo.IDileGetir(id)
+	if err != nil {
+		return nil, err
+	}
+	if req.Baslik != "" {
+		eser.Baslik = req.Baslik
+	}
+	if req.Aciklama != "" {
+		eser.Aciklama = req.Aciklama
+	}
+	if req.GorselURL != "" {
+		eser.GorselURL = req.GorselURL
+	}
+	if req.Kategori != "" {
+		eser.Kategori = req.Kategori
+	}
+	if req.Fiyat > 0 {
+		eser.Fiyat = req.Fiyat
+	}
+	if req.StokAdedi >= 0 {
+		eser.StokAdedi = req.StokAdedi
+	}
+	if err := s.repo.Guncelle(eser); err != nil {
+		return nil, err
+	}
+	return eserDTO(eser), nil
+}
+
+func (s *EserServiceImpl) Sil(id uint) error {
+	return s.repo.Sil(id)
+}
+
 // ── Sanatçı Service ───────────────────────────────────────────────────────────
 
 var _ domainsvc.SanatciService = (*SanatciServiceImpl)(nil)
@@ -234,6 +283,38 @@ func (s *SanatciServiceImpl) DetayGetir(id uint) (*dto.SanatciDTO, error) {
 	}, nil
 }
 
+func (s *SanatciServiceImpl) Olustur(req *dto.SanatciOlusturIstegi) (*dto.SanatciDTO, error) {
+	sanatci := &entity.Sanatci{
+		AdSoyad:   req.AdSoyad,
+		Biyografi: req.Biyografi,
+	}
+	if err := s.repo.Olustur(sanatci); err != nil {
+		return nil, err
+	}
+	return &dto.SanatciDTO{ID: sanatci.ID, AdSoyad: sanatci.AdSoyad, Biyografi: sanatci.Biyografi}, nil
+}
+
+func (s *SanatciServiceImpl) Guncelle(id uint, req *dto.SanatciGuncelleIstegi) (*dto.SanatciDTO, error) {
+	sanatci, err := s.repo.IDileGetir(id)
+	if err != nil {
+		return nil, err
+	}
+	if req.AdSoyad != "" {
+		sanatci.AdSoyad = req.AdSoyad
+	}
+	if req.Biyografi != "" {
+		sanatci.Biyografi = req.Biyografi
+	}
+	if err := s.repo.Guncelle(sanatci); err != nil {
+		return nil, err
+	}
+	return &dto.SanatciDTO{ID: sanatci.ID, AdSoyad: sanatci.AdSoyad, Biyografi: sanatci.Biyografi}, nil
+}
+
+func (s *SanatciServiceImpl) Sil(id uint) error {
+	return s.repo.Sil(id)
+}
+
 // ── Etkinlik Service ──────────────────────────────────────────────────────────
 
 var _ domainsvc.EtkinlikService = (*EtkinlikServiceImpl)(nil)
@@ -262,6 +343,54 @@ func (s *EtkinlikServiceImpl) DetayGetir(id uint) (*dto.EtkinlikDTO, error) {
 		return nil, err
 	}
 	return etkinlikDTO(e), nil
+}
+
+func (s *EtkinlikServiceImpl) Olustur(req *dto.EtkinlikOlusturIstegi) (*dto.EtkinlikDTO, error) {
+	etkinlik := &entity.Etkinlik{
+		Baslik:         req.Baslik,
+		Aciklama:       req.Aciklama,
+		EtkinlikTarihi: req.EtkinlikTarihi,
+		BaslangicSaati: req.BaslangicSaati,
+		Kontenjan:      req.Kontenjan,
+		Ucret:          req.Ucret,
+	}
+	if err := s.repo.Olustur(etkinlik); err != nil {
+		return nil, err
+	}
+	return etkinlikDTO(etkinlik), nil
+}
+
+func (s *EtkinlikServiceImpl) Guncelle(id uint, req *dto.EtkinlikGuncelleIstegi) (*dto.EtkinlikDTO, error) {
+	etkinlik, err := s.repo.IDileGetir(id)
+	if err != nil {
+		return nil, err
+	}
+	if req.Baslik != "" {
+		etkinlik.Baslik = req.Baslik
+	}
+	if req.Aciklama != "" {
+		etkinlik.Aciklama = req.Aciklama
+	}
+	if !req.EtkinlikTarihi.IsZero() {
+		etkinlik.EtkinlikTarihi = req.EtkinlikTarihi
+	}
+	if req.BaslangicSaati != "" {
+		etkinlik.BaslangicSaati = req.BaslangicSaati
+	}
+	if req.Kontenjan > 0 {
+		etkinlik.Kontenjan = req.Kontenjan
+	}
+	if req.Ucret >= 0 {
+		etkinlik.Ucret = req.Ucret
+	}
+	if err := s.repo.Guncelle(etkinlik); err != nil {
+		return nil, err
+	}
+	return etkinlikDTO(etkinlik), nil
+}
+
+func (s *EtkinlikServiceImpl) Sil(id uint) error {
+	return s.repo.Sil(id)
 }
 
 // ── Rezervasyon Service ───────────────────────────────────────────────────────
@@ -899,6 +1028,74 @@ func (s *KampanyaServiceImpl) KullaniciyaOzelFirsatlar(kullaniciID uint) ([]*dto
 			IndirimYuzdesi:   k.IndirimYuzdesi,
 			GecerlilikTarihi: k.GecerlilikTarihi.Format("2006-01-02"),
 		})
+	}
+	return result, nil
+}
+
+// ── Admin Service ─────────────────────────────────────────────────────────────
+
+var _ domainsvc.AdminService = (*AdminServiceImpl)(nil)
+
+type AdminServiceImpl struct {
+	repo domainrepo.AdminRepository
+}
+
+func NewAdminService(repo domainrepo.AdminRepository) domainsvc.AdminService {
+	return &AdminServiceImpl{repo}
+}
+
+func (s *AdminServiceImpl) TumSiparisleri() ([]*dto.SiparisDTO, error) {
+	liste, err := s.repo.TumSiparisleri()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*dto.SiparisDTO, 0, len(liste))
+	for _, sp := range liste {
+		result = append(result, &dto.SiparisDTO{
+			ID: sp.ID, ToplamTutar: sp.ToplamTutar,
+			OdemYontemi: sp.OdemYontemi, Durum: sp.Durum,
+			OlusturmaTarihi: sp.OlusturmaTarihi,
+		})
+	}
+	return result, nil
+}
+
+func (s *AdminServiceImpl) TumRezervasyonlari() ([]*dto.RezervasyonDTO, error) {
+	liste, err := s.repo.TumRezervasyonlari()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*dto.RezervasyonDTO, 0, len(liste))
+	for _, r := range liste {
+		result = append(result, rezervasyonDTO(r))
+	}
+	return result, nil
+}
+
+func (s *AdminServiceImpl) TumDestekTaleplerini() ([]*dto.DestekTalebiDTO, error) {
+	liste, err := s.repo.TumDestekTaleplerini()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*dto.DestekTalebiDTO, 0, len(liste))
+	for _, d := range liste {
+		result = append(result, &dto.DestekTalebiDTO{
+			ID: d.ID, Konu: d.Konu, Mesaj: d.Mesaj,
+			Durum: d.Durum, OlusturmaTarihi: d.OlusturmaTarihi,
+		})
+	}
+	return result, nil
+}
+
+func (s *AdminServiceImpl) TumKullanicilari() ([]*dto.KullaniciDTO, error) {
+	liste, err := s.repo.TumKullanicilari()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*dto.KullaniciDTO, 0, len(liste))
+	for _, u := range liste {
+		d := kullaniciDTO(u)
+		result = append(result, &d)
 	}
 	return result, nil
 }

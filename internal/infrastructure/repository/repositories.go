@@ -94,6 +94,27 @@ func (r *GormEserRepo) KategoriileListele(kategori string) ([]*entity.Eser, erro
 	return eserler, nil
 }
 
+func (r *GormEserRepo) Olustur(e *entity.Eser) error {
+	if err := r.db.Create(e).Error; err != nil {
+		return apperror.Internal("eser oluşturulamadı", err)
+	}
+	return nil
+}
+
+func (r *GormEserRepo) Guncelle(e *entity.Eser) error {
+	if err := r.db.Save(e).Error; err != nil {
+		return apperror.Internal("eser güncellenemedi", err)
+	}
+	return nil
+}
+
+func (r *GormEserRepo) Sil(id uint) error {
+	if err := r.db.Delete(&entity.Eser{}, id).Error; err != nil {
+		return apperror.Internal("eser silinemedi", err)
+	}
+	return nil
+}
+
 // ── Sanatçılar ────────────────────────────────────────────────────────────────
 
 type GormSanatciRepo struct{ db *gorm.DB }
@@ -121,6 +142,27 @@ func (r *GormSanatciRepo) IDileGetir(id uint) (*entity.Sanatci, error) {
 	return &s, nil
 }
 
+func (r *GormSanatciRepo) Olustur(s *entity.Sanatci) error {
+	if err := r.db.Create(s).Error; err != nil {
+		return apperror.Internal("sanatçı oluşturulamadı", err)
+	}
+	return nil
+}
+
+func (r *GormSanatciRepo) Guncelle(s *entity.Sanatci) error {
+	if err := r.db.Save(s).Error; err != nil {
+		return apperror.Internal("sanatçı güncellenemedi", err)
+	}
+	return nil
+}
+
+func (r *GormSanatciRepo) Sil(id uint) error {
+	if err := r.db.Delete(&entity.Sanatci{}, id).Error; err != nil {
+		return apperror.Internal("sanatçı silinemedi", err)
+	}
+	return nil
+}
+
 // ── Etkinlikler ───────────────────────────────────────────────────────────────
 
 type GormEtkinlikRepo struct{ db *gorm.DB }
@@ -146,6 +188,27 @@ func (r *GormEtkinlikRepo) IDileGetir(id uint) (*entity.Etkinlik, error) {
 		return nil, apperror.Internal("veritabanı hatası", err)
 	}
 	return &e, nil
+}
+
+func (r *GormEtkinlikRepo) Olustur(e *entity.Etkinlik) error {
+	if err := r.db.Create(e).Error; err != nil {
+		return apperror.Internal("etkinlik oluşturulamadı", err)
+	}
+	return nil
+}
+
+func (r *GormEtkinlikRepo) Guncelle(e *entity.Etkinlik) error {
+	if err := r.db.Save(e).Error; err != nil {
+		return apperror.Internal("etkinlik güncellenemedi", err)
+	}
+	return nil
+}
+
+func (r *GormEtkinlikRepo) Sil(id uint) error {
+	if err := r.db.Delete(&entity.Etkinlik{}, id).Error; err != nil {
+		return apperror.Internal("etkinlik silinemedi", err)
+	}
+	return nil
 }
 
 // ── Rezervasyonlar ────────────────────────────────────────────────────────────
@@ -447,6 +510,46 @@ func (r *GormKarsilastirmaRepo) KullaniciyaGoreListele(kullaniciID uint) ([]*ent
 	var liste []*entity.KarsilastirmaListesi
 	if err := r.db.Preload("Ogeler").Where("kullanici_id = ?", kullaniciID).Find(&liste).Error; err != nil {
 		return nil, apperror.Internal("listeler getirilemedi", err)
+	}
+	return liste, nil
+}
+
+// ── Admin Repository ──────────────────────────────────────────────────────────
+
+type GormAdminRepo struct{ db *gorm.DB }
+
+func NewAdminRepo(db *gorm.DB) domainrepo.AdminRepository {
+	return &GormAdminRepo{db}
+}
+
+func (r *GormAdminRepo) TumSiparisleri() ([]*entity.Siparis, error) {
+	var liste []*entity.Siparis
+	if err := r.db.Preload("Kullanici").Find(&liste).Error; err != nil {
+		return nil, apperror.Internal("siparişler getirilemedi", err)
+	}
+	return liste, nil
+}
+
+func (r *GormAdminRepo) TumRezervasyonlari() ([]*entity.Rezervasyon, error) {
+	var liste []*entity.Rezervasyon
+	if err := r.db.Preload("Kullanici").Preload("Etkinlik").Find(&liste).Error; err != nil {
+		return nil, apperror.Internal("rezervasyonlar getirilemedi", err)
+	}
+	return liste, nil
+}
+
+func (r *GormAdminRepo) TumDestekTaleplerini() ([]*entity.DestekTalebi, error) {
+	var liste []*entity.DestekTalebi
+	if err := r.db.Preload("Kullanici").Find(&liste).Error; err != nil {
+		return nil, apperror.Internal("destek talepleri getirilemedi", err)
+	}
+	return liste, nil
+}
+
+func (r *GormAdminRepo) TumKullanicilari() ([]*entity.User, error) {
+	var liste []*entity.User
+	if err := r.db.Find(&liste).Error; err != nil {
+		return nil, apperror.Internal("kullanıcılar getirilemedi", err)
 	}
 	return liste, nil
 }

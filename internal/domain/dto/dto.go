@@ -245,3 +245,55 @@ type AdminRaporDTO struct {
 	ToplamEser        int64 `json:"toplam_eser"`
 	ToplamEtkinlik    int64 `json:"toplam_etkinlik"`
 }
+
+// ── Admin CRUD ────────────────────────────────────────────────────────────────
+
+// Eser
+type EserOlusturIstegi struct {
+	SanatciID uint    `json:"sanatci_id" binding:"required"`
+	Baslik    string  `json:"baslik"     binding:"required,min=2,max=200"`
+	Aciklama  string  `json:"aciklama"`
+	GorselURL string  `json:"gorsel_url"`
+	Kategori  string  `json:"kategori"`
+	Fiyat     float64 `json:"fiyat"      binding:"required,gt=0"`
+	StokAdedi int     `json:"stok_adedi" binding:"required,min=0"`
+}
+
+type EserGuncelleIstegi struct {
+	Baslik    string  `json:"baslik"     binding:"omitempty,min=2,max=200"`
+	Aciklama  string  `json:"aciklama"   binding:"omitempty"`
+	GorselURL string  `json:"gorsel_url" binding:"omitempty"`
+	Kategori  string  `json:"kategori"   binding:"omitempty"`
+	Fiyat     float64 `json:"fiyat"      binding:"omitempty,gt=0"`
+	StokAdedi int     `json:"stok_adedi" binding:"omitempty,min=0"`
+}
+
+// Etkinlik
+type EtkinlikOlusturIstegi struct {
+	Baslik         string    `json:"baslik"          binding:"required,min=2,max=200"`
+	Aciklama       string    `json:"aciklama"`
+	EtkinlikTarihi time.Time `json:"etkinlik_tarihi" binding:"required"`
+	BaslangicSaati string    `json:"baslangic_saati"`
+	Kontenjan      int       `json:"kontenjan"       binding:"required,min=1"`
+	Ucret          float64   `json:"ucret"`
+}
+
+type EtkinlikGuncelleIstegi struct {
+	Baslik         string    `json:"baslik"          binding:"omitempty,min=2,max=200"`
+	Aciklama       string    `json:"aciklama"        binding:"omitempty"`
+	EtkinlikTarihi time.Time `json:"etkinlik_tarihi" binding:"omitempty"`
+	BaslangicSaati string    `json:"baslangic_saati" binding:"omitempty"`
+	Kontenjan      int       `json:"kontenjan"       binding:"omitempty,min=1"`
+	Ucret          float64   `json:"ucret"           binding:"omitempty"`
+}
+
+// Sanatçı
+type SanatciOlusturIstegi struct {
+	AdSoyad   string `json:"ad_soyad"   binding:"required,min=2,max=100"`
+	Biyografi string `json:"biyografi"`
+}
+
+type SanatciGuncelleIstegi struct {
+	AdSoyad   string `json:"ad_soyad"   binding:"omitempty,min=2,max=100"`
+	Biyografi string `json:"biyografi"  binding:"omitempty"`
+}

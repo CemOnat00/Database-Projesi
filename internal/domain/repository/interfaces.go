@@ -14,16 +14,25 @@ type EserRepository interface {
 	Listele() ([]*entity.Eser, error)
 	IDileGetir(id uint) (*entity.Eser, error)
 	KategoriileListele(kategori string) ([]*entity.Eser, error)
+	Olustur(e *entity.Eser) error
+	Guncelle(e *entity.Eser) error
+	Sil(id uint) error
 }
 
 type SanatciRepository interface {
 	Listele() ([]*entity.Sanatci, error)
 	IDileGetir(id uint) (*entity.Sanatci, error)
+	Olustur(s *entity.Sanatci) error
+	Guncelle(s *entity.Sanatci) error
+	Sil(id uint) error
 }
 
 type EtkinlikRepository interface {
 	Listele() ([]*entity.Etkinlik, error)
 	IDileGetir(id uint) (*entity.Etkinlik, error)
+	Olustur(e *entity.Etkinlik) error
+	Guncelle(e *entity.Etkinlik) error
+	Sil(id uint) error
 }
 
 type RezervasyonRepository interface {
@@ -75,4 +84,11 @@ type DestekRepository interface {
 type DestekMesajRepository interface {
 	Gonder(mesaj *entity.DestekMesaj) error
 	TalepeMesajlariGetir(talepID uint) ([]*entity.DestekMesaj, error)
+}
+
+type AdminRepository interface {
+	TumSiparisleri() ([]*entity.Siparis, error)
+	TumRezervasyonlari() ([]*entity.Rezervasyon, error)
+	TumDestekTaleplerini() ([]*entity.DestekTalebi, error)
+	TumKullanicilari() ([]*entity.User, error)
 }
