@@ -67,6 +67,7 @@ type EtkinlikDTO struct {
 	ID             uint      `json:"id"`
 	Baslik         string    `json:"baslik"`
 	Aciklama       string    `json:"aciklama"`
+	GorselURL      string    `json:"gorsel_url"`
 	EtkinlikTarihi time.Time `json:"etkinlik_tarihi"`
 	BaslangicSaati string    `json:"baslangic_saati"`
 	Kontenjan      int       `json:"kontenjan"`
@@ -187,12 +188,12 @@ type DestekMesajDTO struct {
 // ── Karşılaştırma ─────────────────────────────────────────────────────────────
 
 type EserKarsilastirIstegi struct {
-	EserIDler []uint `json:"eser_idler" binding:"required,min=2,max=4"`
+	EserIDler []uint `json:"eser_idler" binding:"required,min=1,max=10"`
 	Kaydet    bool   `json:"kaydet"` // sonucu kaydet mi?
 }
 
 type EtkinlikKarsilastirIstegi struct {
-	EtkinlikIDler []uint `json:"etkinlik_idler" binding:"required,min=2,max=4"`
+	EtkinlikIDler []uint `json:"etkinlik_idler" binding:"required,min=1,max=10"`
 	Kaydet        bool   `json:"kaydet"`
 }
 
@@ -239,11 +240,13 @@ type EtkinlikIstatistikDTO struct {
 }
 
 type AdminRaporDTO struct {
-	ToplamKullanici   int64 `json:"toplam_kullanici"`
-	ToplamSiparis     int64 `json:"toplam_siparis"`
-	ToplamRezervasyon int64 `json:"toplam_rezervasyon"`
-	ToplamEser        int64 `json:"toplam_eser"`
-	ToplamEtkinlik    int64 `json:"toplam_etkinlik"`
+	ToplamKullanici   int64   `json:"toplam_kullanici"`
+	ToplamSiparis     int64   `json:"toplam_siparis"`
+	ToplamRezervasyon int64   `json:"toplam_rezervasyon"`
+	ToplamEser        int64   `json:"toplam_eser"`
+	ToplamEtkinlik    int64   `json:"toplam_etkinlik"`
+	ToplamGelir       float64 `json:"toplam_gelir"`
+	OrtalamaPuan      float64 `json:"ortalama_puan"`
 }
 
 // ── Admin CRUD ────────────────────────────────────────────────────────────────
@@ -272,6 +275,7 @@ type EserGuncelleIstegi struct {
 type EtkinlikOlusturIstegi struct {
 	Baslik         string    `json:"baslik"          binding:"required,min=2,max=200"`
 	Aciklama       string    `json:"aciklama"`
+	GorselURL      string    `json:"gorsel_url"`
 	EtkinlikTarihi time.Time `json:"etkinlik_tarihi" binding:"required"`
 	BaslangicSaati string    `json:"baslangic_saati"`
 	Kontenjan      int       `json:"kontenjan"       binding:"required,min=1"`
@@ -281,6 +285,7 @@ type EtkinlikOlusturIstegi struct {
 type EtkinlikGuncelleIstegi struct {
 	Baslik         string    `json:"baslik"          binding:"omitempty,min=2,max=200"`
 	Aciklama       string    `json:"aciklama"        binding:"omitempty"`
+	GorselURL      string    `json:"gorsel_url"      binding:"omitempty"`
 	EtkinlikTarihi time.Time `json:"etkinlik_tarihi" binding:"omitempty"`
 	BaslangicSaati string    `json:"baslangic_saati" binding:"omitempty"`
 	Kontenjan      int       `json:"kontenjan"       binding:"omitempty,min=1"`

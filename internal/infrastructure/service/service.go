@@ -45,6 +45,7 @@ func etkinlikDTO(e *entity.Etkinlik) *dto.EtkinlikDTO {
 		ID:             e.ID,
 		Baslik:         e.Baslik,
 		Aciklama:       e.Aciklama,
+		GorselURL:      e.GorselURL,
 		EtkinlikTarihi: e.EtkinlikTarihi,
 		BaslangicSaati: e.BaslangicSaati,
 		Kontenjan:      e.Kontenjan,
@@ -349,6 +350,7 @@ func (s *EtkinlikServiceImpl) Olustur(req *dto.EtkinlikOlusturIstegi) (*dto.Etki
 	etkinlik := &entity.Etkinlik{
 		Baslik:         req.Baslik,
 		Aciklama:       req.Aciklama,
+		GorselURL:      req.GorselURL,
 		EtkinlikTarihi: req.EtkinlikTarihi,
 		BaslangicSaati: req.BaslangicSaati,
 		Kontenjan:      req.Kontenjan,
@@ -370,6 +372,9 @@ func (s *EtkinlikServiceImpl) Guncelle(id uint, req *dto.EtkinlikGuncelleIstegi)
 	}
 	if req.Aciklama != "" {
 		etkinlik.Aciklama = req.Aciklama
+	}
+	if req.GorselURL != "" {
+		etkinlik.GorselURL = req.GorselURL
 	}
 	if !req.EtkinlikTarihi.IsZero() {
 		etkinlik.EtkinlikTarihi = req.EtkinlikTarihi
@@ -965,6 +970,7 @@ func (s *IstatistikServiceImpl) EtkinlikIstatistigi(etkinlikID uint) (*dto.Etkin
 
 func (s *IstatistikServiceImpl) AdminRapor() (*dto.AdminRaporDTO, error) {
 	var toplamKullanici, toplamSiparis, toplamRezervasyon, toplamEser, toplamEtkinlik int64
+	var toplamGelir, ortalamaPuan float64
 
 	s.db.Model(&entity.User{}).Count(&toplamKullanici)
 	s.db.Model(&entity.Siparis{}).Count(&toplamSiparis)
@@ -972,12 +978,17 @@ func (s *IstatistikServiceImpl) AdminRapor() (*dto.AdminRaporDTO, error) {
 	s.db.Model(&entity.Eser{}).Count(&toplamEser)
 	s.db.Model(&entity.Etkinlik{}).Count(&toplamEtkinlik)
 
+	s.db.Model(&entity.Siparis{}).Select("COALESCE(SUM(toplam_tutar), 0)").Scan(&toplamGelir)
+	s.db.Model(&entity.Yorum{}).Select("COALESCE(AVG(puan), 0)").Scan(&ortalamaPuan)
+
 	return &dto.AdminRaporDTO{
 		ToplamKullanici:   toplamKullanici,
 		ToplamSiparis:     toplamSiparis,
 		ToplamRezervasyon: toplamRezervasyon,
 		ToplamEser:        toplamEser,
 		ToplamEtkinlik:    toplamEtkinlik,
+		ToplamGelir:       toplamGelir,
+		OrtalamaPuan:      ortalamaPuan,
 	}, nil
 }
 

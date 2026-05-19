@@ -50,6 +50,7 @@ type Etkinlik struct {
 	ID             uint      `gorm:"primaryKey;autoIncrement"                   json:"id"`
 	Baslik         string    `gorm:"column:baslik;not null;size:200"            json:"baslik"`
 	Aciklama       string    `gorm:"column:aciklama;type:text"                  json:"aciklama"`
+	GorselURL      string    `gorm:"column:gorsel_url;size:255"                 json:"gorsel_url"`
 	EtkinlikTarihi time.Time `gorm:"column:etkinlik_tarihi"                     json:"etkinlik_tarihi"`
 	BaslangicSaati string    `gorm:"column:baslangic_saati"                     json:"baslangic_saati"`
 	Kontenjan      int       `gorm:"column:kontenjan"                           json:"kontenjan"`

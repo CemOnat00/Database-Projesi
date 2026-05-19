@@ -213,7 +213,7 @@
     /* ---- Artworks (eserler) ---- */
     async listArtworks(params) {
       const data = await global.Api.get('/eserler');
-      const arr = (data && data.eserler) || [];
+      const arr = (data && data.eserler) || (Array.isArray(data) ? data : []);
       let mapped = arr.map(mapEser);
       if (params && params.category) mapped = mapped.filter(a => a.category === params.category);
       if (params && params.q) {
@@ -233,7 +233,7 @@
     /* ---- Workshops (etkinlikler) ---- */
     async listWorkshops(params) {
       const data = await global.Api.get('/etkinlikler');
-      const arr = (data && data.etkinlikler) || [];
+      const arr = (data && data.etkinlikler) || (Array.isArray(data) ? data : []);
       let mapped = arr.map(mapEtkinlik);
       if (params && params.medium && params.medium !== 'all') {
         mapped = mapped.filter(w => (w.mediumTag || '').toLowerCase() === params.medium);
@@ -263,7 +263,7 @@
     /* ---- Reservations ---- */
     async listReservations() {
       const data = await global.Api.get('/rezervasyonlar');
-      const arr = Array.isArray(data) ? data : (data && data.rezervasyonlar) || [];
+      const arr = (data && data.rezervasyonlar) || (Array.isArray(data) ? data : []);
       return arr.map(mapRezervasyon);
     },
     async createReservation(payload) {
@@ -289,7 +289,7 @@
     /* ---- Orders ---- */
     async listOrders() {
       const data = await global.Api.get('/siparisler');
-      const arr = Array.isArray(data) ? data : (data && data.siparisler) || [];
+      const arr = (data && data.siparisler) || (Array.isArray(data) ? data : []);
       return arr.map(mapSiparis);
     },
     async getOrder(id) {
@@ -351,12 +351,12 @@
     favorites: {
       async list() {
         const data = await global.Api.get('/favoriler');
-        const arr = Array.isArray(data) ? data : (data && data.favoriler) || [];
+        const arr = (data && data.favoriler) || (Array.isArray(data) ? data : []);
         return arr.map(f => f.eser_id || (f.eser && f.eser.id) || f.id);
       },
       async listFull() {
         const data = await global.Api.get('/favoriler');
-        const arr = Array.isArray(data) ? data : (data && data.favoriler) || [];
+        const arr = (data && data.favoriler) || (Array.isArray(data) ? data : []);
         return arr.map(mapFavori);
       },
       async has(id) {
@@ -404,8 +404,8 @@
       const body = {
         referans_id: Number(targetId),
         referans_tipi: kind || 'eser',
-        puan: payload.rating,
-        metin: payload.body,
+        puan: Number(payload.rating || 5),
+        metin: String(payload.body || ''),
       };
       const data = await global.Api.post('/yorumlar', body);
       return { ok: true, review: mapYorum(data) };
@@ -427,7 +427,7 @@
     /* ---- Support ---- */
     async listSupportTickets() {
       const data = await global.Api.get('/destek');
-      const arr = Array.isArray(data) ? data : (data && data.talepler) || [];
+      const arr = (data && data.talepler) || (Array.isArray(data) ? data : []);
       return arr.map(mapDestek);
     },
     async submitSupportTicket(payload) {
@@ -441,7 +441,7 @@
     async listChatMessages(ticketId) {
       if (!ticketId) return [];
       const data = await global.Api.get('/destek/' + Number(ticketId) + '/mesaj');
-      const arr = Array.isArray(data) ? data : (data && data.mesajlar) || [];
+      const arr = (data && data.mesajlar) || (Array.isArray(data) ? data : []);
       return arr.map(mapDestekMesaj);
     },
     async sendChatMessage(text, ticketId) {
@@ -575,22 +575,22 @@
     adminListele: {
       async siparisler() {
         const data = await global.Api.get('/admin/siparisler');
-        const arr = Array.isArray(data) ? data : (data && data.siparisler) || [];
+        const arr = (data && data.siparisler) || (Array.isArray(data) ? data : []);
         return arr.map(mapSiparis);
       },
       async rezervasyonlar() {
         const data = await global.Api.get('/admin/rezervasyonlar');
-        const arr = Array.isArray(data) ? data : (data && data.rezervasyonlar) || [];
+        const arr = (data && data.rezervasyonlar) || (Array.isArray(data) ? data : []);
         return arr.map(mapRezervasyon);
       },
       async destekTalepleri() {
         const data = await global.Api.get('/admin/destek');
-        const arr = Array.isArray(data) ? data : (data && data.talepler) || [];
+        const arr = (data && data.talepler) || (Array.isArray(data) ? data : []);
         return arr.map(mapDestek);
       },
       async kullanicilar() {
         const data = await global.Api.get('/admin/kullanicilar');
-        const arr = Array.isArray(data) ? data : (data && data.kullanicilar) || [];
+        const arr = (data && data.kullanicilar) || (Array.isArray(data) ? data : []);
         return arr.map(k => ({
           id: k.id,
           name: k.ad_soyad,

@@ -280,7 +280,7 @@ func (r *GormSiparisRepo) IDileGetir(id uint) (*entity.Siparis, error) {
 
 func (r *GormSiparisRepo) KullaniciyaGoreListele(kullaniciID uint) ([]*entity.Siparis, error) {
 	var liste []*entity.Siparis
-	if err := r.db.Where("kullanici_id = ?", kullaniciID).Find(&liste).Error; err != nil {
+	if err := r.db.Preload("Detaylar").Where("kullanici_id = ?", kullaniciID).Find(&liste).Error; err != nil {
 		return nil, apperror.Internal("siparişler getirilemedi", err)
 	}
 	return liste, nil
