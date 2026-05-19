@@ -600,6 +600,14 @@
           _raw: k,
         }));
       },
+      async yorumlar() {
+        console.warn('adminListele.yorumlar API bagli degil. Lutfen tum yorumlari cekecek bir endpoint ekleyin.');
+        return [];
+      }
+    },
+
+    async adminRapor() {
+      return await global.Api.get('/admin/rapor');
     },
 
     /* ---- Waitlist (frontend-only stub) ---- */
