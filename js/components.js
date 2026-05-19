@@ -159,37 +159,93 @@
     `;
   }
 
-  /* ---- Admin header (dark) ----------------------------------- */
+  /* ---- Admin Sidebar Navigation -------------------------------- */
   function renderAdminHeader(activeKey) {
     const root = document.getElementById('navbar-root');
     if (!root) return;
-    const user = (global.Store && Store.User.get()) || {};
-    const displayName = (user.name || 'Admin').split(' ')[0];
-    const rp = rootPrefix(); // admin sayfaları içinde "../" döner
+    const user   = (global.Store && Store.User.get()) || {};
+    const name   = user.name || 'Admin';
+    const email  = user.email || '';
+    const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+    // Apply sidebar body class
+    document.body.classList.add('admin-page');
+
+    const NAV = [
+      { key: 'insights',     label: 'Dashboard',     href: 'index.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>` },
+      { key: 'artworks',     label: 'Artworks',      href: 'artworks.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` },
+      { key: 'workshops',    label: 'Workshops',      href: 'workshops.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>` },
+      { key: 'artists',      label: 'Artists',        href: 'artists.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>` },
+      { key: 'orders',       label: 'Orders',         href: 'orders.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>` },
+      { key: 'reservations', label: 'Reservations',   href: 'reservations.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>` },
+      { key: 'reviews',      label: 'Reviews',        href: 'reviews.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` },
+      { key: 'users',        label: 'Users',           href: 'users.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+    ];
 
     root.innerHTML = `
-      <header class="sticky top-0 z-40 bg-ink-strong text-white">
-        <nav class="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <a href="index.html" class="font-display italic text-2xl">The Curated Gallery</a>
-            <span class="text-[10px] uppercase tracking-lux border border-white/30 px-2 py-1">Admin</span>
-          </div>
-          <ul class="hidden md:flex items-center gap-8 text-[11px] uppercase tracking-lux">
-            ${ADMIN_ITEMS.map(it => `<li><a href="${it.href}" class="${it.key === activeKey ? 'border-b border-white pb-0.5' : 'text-white/60 hover:text-white'}">${it.label}</a></li>`).join('')}
+      <aside class="admin-sidebar" id="admin-sidebar">
+        <!-- Logo -->
+        <div class="admin-sidebar-logo">
+          <a href="index.html">
+            <span class="admin-logo-text">The Curated Gallery</span>
+            <span class="admin-logo-badge">Admin</span>
+          </a>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="admin-sidebar-nav" aria-label="Admin navigation">
+          <p class="admin-nav-group-label">Management</p>
+          <ul>
+            ${NAV.map(it => `
+              <li>
+                <a href="${it.href}" class="admin-nav-item ${it.key === activeKey ? 'active' : ''}">
+                  <span class="admin-nav-icon">${it.icon}</span>
+                  <span>${it.label}</span>
+                  ${it.key === activeKey ? '' : ''}
+                </a>
+              </li>`).join('')}
           </ul>
-          <div class="flex items-center gap-4 text-[11px] uppercase tracking-lux">
-            <span class="text-white/70">${Utils.escapeHTML(displayName)}</span>
-            <button id="admin-signout" class="text-white/70 hover:text-white">Sign Out</button>
-          </div>
+
+          <p class="admin-nav-group-label" style="margin-top:1.5rem">Site</p>
+          <ul>
+            <li>
+              <a href="../index.html" class="admin-nav-item" target="_blank">
+                <span class="admin-nav-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </span>
+                <span>View Live Site</span>
+              </a>
+            </li>
+          </ul>
         </nav>
-      </header>
+
+        <!-- User -->
+        <div class="admin-sidebar-user">
+          <div class="admin-user-avatar">${Utils.escapeHTML(initials)}</div>
+          <div class="admin-user-info">
+            <p class="admin-user-name">${Utils.escapeHTML(name)}</p>
+            <p class="admin-user-email">${Utils.escapeHTML(email)}</p>
+          </div>
+          <button id="admin-signout" class="admin-signout-btn" title="Sign Out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </aside>
     `;
 
     document.getElementById('admin-signout')?.addEventListener('click', async () => {
       try { if (global.GALLERY && GALLERY.api && GALLERY.api.logout) await GALLERY.api.logout(); } catch (_) {}
       Store.User.clear();
       Utils.toast('Signed out');
-      setTimeout(() => location.href = rp + 'index.html', 500);
+      setTimeout(() => location.href = '../auth.html', 500);
     });
   }
 

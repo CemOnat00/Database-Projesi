@@ -1,0 +1,45 @@
+# Environment & secrets — ASLA git'e gönderme
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+
+# Go test binary, coverage
+*.test
+*.out
+coverage.html
+
+# Go module cache
+vendor/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (QA tooling)
+node_modules/
+npm-debug.log*
+
+# Logs
+*.log

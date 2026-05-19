@@ -77,7 +77,7 @@
     const root = Utils.qs('#chart');
     if (!root) return;
     root.innerHTML = data.map((d, i) => `
-      <div class="flex-1 flex flex-col items-center gap-2">
+      <div class="flex-1 h-full flex flex-col justify-end items-center gap-2">
         <div class="bar" style="height:${(d / max * 100).toFixed(1)}%"></div>
         <p class="text-[10px] ${i === labels.length - 1 ? 'text-ink-strong font-medium' : 'text-ink-muted'}">${labels[i]}</p>
       </div>
@@ -126,7 +126,9 @@
   }
 
   function renderActivity() {
-    Utils.qs('#activity').innerHTML = `
+    const root = Utils.qs('#activity');
+    if (!root) return;
+    root.innerHTML = `
       <li class="flex items-center gap-5 py-4">
         <span class="w-2 h-2 bg-brand rounded-full flex-shrink-0"></span>
         <div class="flex-1"><p class="text-sm text-ink-strong">Live activity feed will appear here as backend events stream in.</p></div>
@@ -139,23 +141,22 @@
     if (!root) return;
     const r = await GALLERY.api.getAdminReport();
     root.innerHTML = `
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <div class="bg-bg-soft border border-line p-5">
-          <p class="text-[11px] uppercase tracking-lux text-ink-muted">Registered Users</p>
-          <p class="font-display text-3xl text-ink-strong mt-2">${(r.toplam_kullanici || 0).toLocaleString()}</p>
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:1px solid #f1f4f9">
+          <span style="font-size:.8rem;color:#8492a6">Registered Users</span>
+          <span style="font-weight:600;color:#1a1d2e;font-size:1.1rem">${(r.toplam_kullanici || 0).toLocaleString()}</span>
         </div>
-        <div class="bg-bg-soft border border-line p-5">
-          <p class="text-[11px] uppercase tracking-lux text-ink-muted">Total Orders</p>
-          <p class="font-display text-3xl text-ink-strong mt-2">${(r.toplam_siparis || 0).toLocaleString()}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:1px solid #f1f4f9">
+          <span style="font-size:.8rem;color:#8492a6">Total Orders</span>
+          <span style="font-weight:600;color:#1a1d2e;font-size:1.1rem">${(r.toplam_siparis || 0).toLocaleString()}</span>
         </div>
-        <div class="bg-bg-soft border border-line p-5">
-          <p class="text-[11px] uppercase tracking-lux text-ink-muted">Total Reservations</p>
-          <p class="font-display text-3xl text-ink-strong mt-2">${(r.toplam_rezervasyon || 0).toLocaleString()}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:1px solid #f1f4f9">
+          <span style="font-size:.8rem;color:#8492a6">Total Reservations</span>
+          <span style="font-weight:600;color:#1a1d2e;font-size:1.1rem">${(r.toplam_rezervasyon || 0).toLocaleString()}</span>
         </div>
-        <div class="bg-bg-soft border border-line p-5">
-          <p class="text-[11px] uppercase tracking-lux text-ink-muted">Catalogue</p>
-          <p class="font-display text-3xl text-ink-strong mt-2">${(r.toplam_eser || 0)} <span class="text-sm text-ink-muted font-normal">artworks</span></p>
-          <p class="text-[11px] text-ink-muted mt-1">${(r.toplam_etkinlik || 0)} workshops</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 0">
+          <span style="font-size:.8rem;color:#8492a6">Catalogue Stats</span>
+          <span style="font-weight:600;color:#1a1d2e;font-size:0.9rem">${(r.toplam_eser || 0)} Art / ${(r.toplam_etkinlik || 0)} Event</span>
         </div>
       </div>`;
   }

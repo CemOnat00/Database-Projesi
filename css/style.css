@@ -138,3 +138,530 @@ details[open] .faq-caret { transform: rotate(45deg); }
   header, footer, .no-print { display: none !important; }
   body { background: #fff; }
 }
+
+/* ================================================================
+   ADMIN PANEL — Sidebar Layout & Components
+   ================================================================ */
+
+/* Body layout when sidebar is active */
+body.admin-page {
+  padding-left: 260px;
+  background: #f0f2f7;
+  min-height: 100vh;
+}
+
+/* ---- Sidebar shell ------------------------------------------- */
+.admin-sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 260px;
+  height: 100vh;
+  background: #1a1d2e;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+}
+
+/* ---- Logo area ---------------------------------------------- */
+.admin-sidebar-logo {
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.admin-sidebar-logo a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+}
+.admin-logo-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  color: #ffffff;
+  line-height: 1.2;
+  flex: 1;
+}
+.admin-logo-badge {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: rgba(201,162,39,0.2);
+  color: #c9a227;
+  border: 1px solid rgba(201,162,39,0.35);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* ---- Navigation --------------------------------------------- */
+.admin-sidebar-nav {
+  flex: 1;
+  padding: 1.25rem 0.75rem;
+  overflow-y: auto;
+}
+.admin-nav-group-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 0 0.75rem;
+  margin-bottom: 0.4rem;
+}
+.admin-sidebar-nav ul {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.55);
+  text-decoration: none;
+  font-size: 0.825rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: background 180ms ease, color 180ms ease;
+  border-left: 2px solid transparent;
+}
+.admin-nav-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.9);
+}
+.admin-nav-item.active {
+  background: rgba(201,162,39,0.12);
+  color: #c9a227;
+  border-left-color: #c9a227;
+}
+.admin-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.admin-nav-item.active .admin-nav-icon { opacity: 1; }
+
+/* ---- User panel at bottom ----------------------------------- */
+.admin-sidebar-user {
+  padding: 1rem 1rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+.admin-user-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a227, #e8c96a);
+  color: #1a1d2e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.admin-user-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.admin-user-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-user-email {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.admin-signout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.3);
+  padding: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 150ms, background 150ms;
+  flex-shrink: 0;
+}
+.admin-signout-btn:hover {
+  color: #ff6b6b;
+  background: rgba(255,107,107,0.12);
+}
+
+/* ---- Admin content area ------------------------------------- */
+body.admin-page main {
+  padding: 2rem 2.5rem;
+  max-width: none;
+}
+
+/* ---- Admin Quick Action Cards ------------------------------- */
+.admin-quick-card {
+  background: #ffffff;
+  border: 1px solid #e5e9f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  cursor: pointer;
+}
+.admin-quick-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+  border-color: #c9a227;
+}
+.admin-quick-card-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.admin-quick-card-body h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1d2e;
+  margin-bottom: 0.2rem;
+}
+.admin-quick-card-body p {
+  font-size: 0.75rem;
+  color: #8492a6;
+  line-height: 1.45;
+}
+
+/* ---- KPI cards (admin) -------------------------------------- */
+.admin-kpi-card {
+  background: #ffffff;
+  border: 1px solid #e5e9f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.admin-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+.admin-kpi-card.blue::before   { background: #3b82f6; }
+.admin-kpi-card.green::before  { background: #10b981; }
+.admin-kpi-card.amber::before  { background: #f59e0b; }
+.admin-kpi-card.purple::before { background: #8b5cf6; }
+
+/* ---- Admin page header -------------------------------------- */
+.admin-page-header {
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.admin-page-header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a1d2e;
+  letter-spacing: -0.02em;
+}
+.admin-page-header p {
+  font-size: 0.8rem;
+  color: #8492a6;
+  margin-top: 0.2rem;
+}
+
+/* ---- Admin table ------------------------------------------- */
+.admin-table-wrap {
+  background: #ffffff;
+  border: 1px solid #e5e9f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.admin-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.825rem;
+}
+.admin-table-wrap thead tr {
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e9f0;
+}
+.admin-table-wrap thead th {
+  padding: 0.75rem 1.25rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8492a6;
+}
+.admin-table-wrap tbody tr {
+  border-bottom: 1px solid #f1f4f9;
+  transition: background 120ms;
+}
+.admin-table-wrap tbody tr:last-child { border-bottom: none; }
+.admin-table-wrap tbody tr:hover { background: #fafbfd; }
+.admin-table-wrap tbody td {
+  padding: 0.85rem 1.25rem;
+  color: #3d4966;
+}
+
+/* Status badges */
+.admin-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.admin-badge.green  { background: #d1fae5; color: #065f46; }
+.admin-badge.amber  { background: #fef3c7; color: #92400e; }
+.admin-badge.red    { background: #fee2e2; color: #991b1b; }
+.admin-badge.blue   { background: #dbeafe; color: #1e40af; }
+.admin-badge.gray   { background: #f1f5f9; color: #475569; }
+
+/* ---- Admin footer (override) -------------------------------- */
+body.admin-page #footer-root footer {
+  background: #f0f2f7;
+  border-top: 1px solid #e5e9f0;
+}
+
+/* ================================================================
+   GLOBAL ADMIN STYLING OVERRIDES (Color Schemes & Components)
+   ================================================================ */
+
+body.admin-page h1, 
+body.admin-page h2, 
+body.admin-page h3,
+body.admin-page h4,
+body.admin-page h5 {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+body.admin-page h1.font-display.text-5xl {
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: #1a1d2e !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.25 !important;
+  margin-top: 0.25rem !important;
+}
+
+body.admin-page p.text-ink-muted,
+body.admin-page p.text-sm.text-ink-muted {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  color: #64748b !important;
+}
+
+/* Page container */
+body.admin-page main {
+  max-width: 1300px !important;
+  margin: 0 auto !important;
+  padding: 2.5rem 3rem !important;
+}
+
+/* Customizing Tailwind elements */
+body.admin-page .bg-surface.border.border-line {
+  background: #ffffff !important;
+  border: 1px solid #e5e9f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+  overflow: hidden !important;
+}
+
+/* Action button replacements */
+body.admin-page .bg-brand {
+  background-color: #1a1d2e !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  letter-spacing: 0.05em !important;
+  transition: background 150ms ease !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+body.admin-page .bg-brand:hover {
+  background-color: #2d3148 !important;
+}
+body.admin-page a.bg-brand, 
+body.admin-page button.bg-brand,
+body.admin-page input[type="submit"].bg-brand {
+  background-color: #1a1d2e !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 0.75rem 1.5rem !important;
+  height: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+body.admin-page a.bg-brand:hover, 
+body.admin-page button.bg-brand:hover,
+body.admin-page input[type="submit"].bg-brand:hover {
+  background-color: #2d3148 !important;
+}
+
+/* Cancel / Secondary buttons */
+body.admin-page main .border-ink-strong\/30,
+body.admin-page main .border-ink-strong,
+body.admin-page main a[href*="artworks.html"]:not(.bg-brand),
+body.admin-page main a[href*="workshops.html"]:not(.bg-brand),
+body.admin-page main a[href*="artists.html"]:not(.bg-brand),
+body.admin-page main a[href*="orders.html"]:not(.bg-brand),
+body.admin-page main a[href*="reservations.html"]:not(.bg-brand) {
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  font-weight: 600 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.75rem 1.5rem !important;
+  text-decoration: none !important;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease !important;
+  cursor: pointer !important;
+}
+body.admin-page main .border-ink-strong\/30:hover,
+body.admin-page main .border-ink-strong:hover,
+body.admin-page main a[href*="artworks.html"]:not(.bg-brand):hover,
+body.admin-page main a[href*="workshops.html"]:not(.bg-brand):hover,
+body.admin-page main a[href*="artists.html"]:not(.bg-brand):hover,
+body.admin-page main a[href*="orders.html"]:not(.bg-brand):hover,
+body.admin-page main a[href*="reservations.html"]:not(.bg-brand):hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #1e293b !important;
+}
+
+/* Specific button styles for page headers */
+body.admin-page .flex-row > a.group.bg-brand {
+  padding: 0.65rem 1.25rem !important;
+}
+
+/* Brand Text and Border Overrides */
+body.admin-page .text-brand {
+  color: #c9a227 !important;
+}
+body.admin-page .border-brand {
+  border-color: #c9a227 !important;
+}
+body.admin-page .hover\:border-brand:hover {
+  border-color: #c9a227 !important;
+}
+body.admin-page .hover\:bg-brand-hover:hover {
+  background-color: #2d3148 !important;
+}
+
+/* Table overrides for all admin subpages */
+body.admin-page table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+body.admin-page table thead {
+  background: #f8fafc !important;
+}
+body.admin-page table thead th {
+  padding: 1rem 1.25rem !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #8492a6 !important;
+  border-bottom: 1px solid #e5e9f0 !important;
+}
+body.admin-page table tbody tr {
+  border-bottom: 1px solid #f1f4f9 !important;
+  transition: background 120ms !important;
+  background: #ffffff !important;
+}
+body.admin-page table tbody tr:last-child {
+  border-bottom: none !important;
+}
+body.admin-page table tbody tr:hover {
+  background: #fafbfd !important;
+}
+body.admin-page table tbody td {
+  padding: 1rem 1.25rem !important;
+  font-size: 0.8rem !important;
+  color: #3d4966 !important;
+}
+
+/* Form and inputs styling in admin */
+body.admin-page input[type="text"],
+body.admin-page input[type="number"],
+body.admin-page input[type="url"],
+body.admin-page input[type="email"],
+body.admin-page select,
+body.admin-page textarea {
+  border-bottom: 1px solid #cbd5e1 !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 0.825rem !important;
+  color: #1e293b !important;
+  padding-bottom: 0.5rem !important;
+  transition: border-color 150ms ease !important;
+}
+body.admin-page textarea {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  padding: 0.75rem !important;
+}
+body.admin-page input:focus,
+body.admin-page select:focus,
+body.admin-page textarea:focus {
+  border-color: #c9a227 !important;
+}
+body.admin-page label {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  color: #64748b !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  font-weight: 500 !important;
+}
+
+/* Badges */
+body.admin-page span.border {
+  border-radius: 4px !important;
+  padding: 0.25rem 0.5rem !important;
+  font-weight: 600 !important;
+}
+
+
