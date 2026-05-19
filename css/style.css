@@ -94,6 +94,24 @@ select {
   opacity: 1;
 }
 
+/* ---- Brand color fallbacks (Tailwind CDN custom color safety net) --- */
+/* Ensures bg-brand, text-brand etc. always render even if Tailwind CDN  */
+/* fails to pick up window.tailwind.config custom color definitions.     */
+.bg-brand          { background-color: #3a1a0f !important; }
+.bg-brand-hover,
+.hover\:bg-brand-hover:hover { background-color: #4a2418 !important; }
+.text-brand        { color: #3a1a0f !important; }
+.border-brand      { border-color: #3a1a0f !important; }
+.bg-accent         { background-color: #944925 !important; }
+.text-accent       { color: #944925 !important; }
+.border-accent     { border-color: #944925 !important; }
+.bg-surface        { background-color: #ffffff !important; }
+.bg-bg             { background-color: #f9f8f6 !important; }
+.bg-bg-soft        { background-color: #f4f3f0 !important; }
+.text-ink-strong   { color: #2a1b15 !important; }
+.text-ink-muted    { color: #5a4a42 !important; }
+.border-line       { border-color: #e5e1db !important; }
+
 /* ---- Bar chart cells (admin) --------------------------------- */
 .bar {
   background: linear-gradient(to top, var(--brand), var(--accent));
