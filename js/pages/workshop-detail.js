@@ -1,20 +1,17 @@
 /* ============================================================
-   pages/workshop-detail.js — Atölye detayı + rezervasyon akışı
-   Backend-ready: veri GALLERY.api.getWorkshop / createReservation
-   / joinWaitlist üzerinden çekilir.
-
-   Üç farklı UI durumu:
-     • book      → normal rezervasyon formu
-     • waitlist  → email ile waitlist'e katılma formu
-     • sold-out  → kapanış mesajı + diğer oturumlara link
-     • no-sessions → "Notify me" mesajı
+   pages/workshop-detail.js — Atölye detay + rezervasyon
+   • GET /etkinlikler/:id
+   • POST /rezervasyonlar
+   • GET /yorumlar/:id?tip=etkinlik / POST /yorumlar
+   • POST /yorumlar/:id/faydali
+   • POST /admin/yorumlar/:id/yanit (admin)
    ============================================================ */
 
 (function () {
   'use strict';
 
   let workshop = null;
-  let availableSessions = []; // bugünden sonraki oturumlar
+  let availableSessions = [];
   let userRating = 0;
   let reviewSort = 'recent';
   const state = {
@@ -28,17 +25,19 @@
 
   async function init() {
     const idParam = Utils.paramId('id');
-    const id = idParam || 'advanced-oil-textures';
+    if (!idParam) { renderNotFound('—'); return; }
 
-    workshop = await GALLERY.api.getWorkshop(id);
-    if (!workshop) {
-      renderNotFound(idParam || id);
+    try {
+      workshop = await GALLERY.api.getWorkshop(idParam);
+    } catch (e) {
+      console.warn('workshop-detail: load failed', e);
+      renderNotFound(idParam);
       return;
     }
+    if (!workshop) { renderNotFound(idParam); return; }
 
-    document.title = `${workshop.title} — ${workshop.instructor} | The Curated Gallery`;
+    document.title = `${workshop.title} — The Curated Gallery`;
 
-    // Filter to upcoming sessions only (UTC midnight today)
     const today = new Date(); today.setHours(0, 0, 0, 0);
     availableSessions = (workshop.sessions || []).filter(s => {
       if (!s.date) return true;
@@ -56,21 +55,18 @@
     refresh();
   }
 
-  /* ---- MODE: pick which form/block to show ------------------- */
   function selectMode() {
-    const bookingForm   = Utils.qs('#booking-form');
-    const waitlistForm  = Utils.qs('#waitlist-form');
-    const soldOutBlock  = Utils.qs('#sold-out-block');
-    const noSessions    = Utils.qs('#no-sessions-block');
+    const bookingForm = Utils.qs('#booking-form');
+    const waitlistForm = Utils.qs('#waitlist-form');
+    const soldOutBlock = Utils.qs('#sold-out-block');
+    const noSessions = Utils.qs('#no-sessions-block');
 
-    // Default: all hidden
     [bookingForm, waitlistForm, soldOutBlock, noSessions].forEach(el => el?.classList.add('hidden'));
 
     if (availableSessions.length === 0) {
       noSessions?.classList.remove('hidden');
       return;
     }
-
     if (workshop.complimentary || workshop.spotsLeft > 0) {
       bookingForm?.classList.remove('hidden');
       configureBookingForm();
@@ -78,34 +74,23 @@
       bindBookingForm();
       return;
     }
-
-    // spotsLeft === 0 below
     if (workshop.waitlist) {
       waitlistForm?.classList.remove('hidden');
       bindWaitlistForm();
       return;
     }
-
     soldOutBlock?.classList.remove('hidden');
   }
 
   function configureBookingForm() {
-    // Tailor titles & buttons to free vs paid
     const title = Utils.qs('#form-title');
     const label = Utils.qs('#submit-label');
-    if (workshop.complimentary) {
-      title.textContent = 'Reserve Your Spot';
-      label.textContent = 'Reserve';
-    } else {
-      title.textContent = 'Reserve Your Seat';
-      label.textContent = 'Book Now';
-    }
+    if (title) title.textContent = workshop.complimentary ? 'Reserve Your Spot' : 'Reserve Your Seat';
+    if (label) label.textContent = workshop.complimentary ? 'Reserve' : 'Book Now';
 
-    // Hide discount block when complimentary
     const discountBlock = Utils.qs('#discount-input')?.closest('.mb-7');
     if (discountBlock) discountBlock.classList.toggle('hidden', !!workshop.complimentary);
 
-    // Hide totals when complimentary
     const totalsBlock = Utils.qs('#sum-subtotal')?.closest('.border-t');
     if (totalsBlock) totalsBlock.classList.toggle('hidden', !!workshop.complimentary);
   }
@@ -132,9 +117,7 @@
     hero.alt = workshop.title;
 
     const tg = Utils.qs('#thumb-grid');
-    const imgs = (workshop.images && workshop.images.length > 0)
-      ? workshop.images.slice(0, 4)
-      : [workshop.image];
+    const imgs = (workshop.images && workshop.images.length > 0) ? workshop.images.slice(0, 4) : [workshop.image];
     if (imgs.length <= 1) { tg.classList.add('hidden'); return; }
     tg.classList.remove('hidden');
     tg.className = `grid gap-3 grid-cols-${Math.min(imgs.length, 3)}`;
@@ -158,7 +141,7 @@
     const first = availableSessions[0] || (workshop.sessions && workshop.sessions[0]);
     if (first) {
       Utils.qs('#m-date').textContent = first.dateLong;
-      Utils.qs('#m-time').textContent = `${first.time} – ${addHours(first.time, parseDurationHours(workshop.duration))}`;
+      Utils.qs('#m-time').textContent = first.time || '—';
     } else {
       Utils.qs('#m-date').textContent = 'Date TBA';
       Utils.qs('#m-time').textContent = '—';
@@ -179,37 +162,16 @@
     if (!workshop.instructorBio) { el.classList.add('hidden'); return; }
     Utils.qs('#instructor-name').textContent = workshop.instructor;
     Utils.qs('#instructor-bio').textContent = workshop.instructorBio;
-
-    const others = GALLERY.WORKSHOPS.filter(w => w.instructor === workshop.instructor && w.id !== workshop.id).slice(0, 3);
-    const otherRoot = Utils.qs('#instructor-other');
-    if (others.length === 0) {
-      Utils.qs('#instructor-other-wrap')?.classList.add('hidden');
-    } else {
-      Utils.qs('#instructor-other-wrap')?.classList.remove('hidden');
-      otherRoot.innerHTML = others.map(o => `
-        <a href="workshop-detail.html?id=${o.id}" class="group block">
-          <div class="overflow-hidden bg-bg-image aspect-square"><img src="${Utils.img(o.image, 600)}" alt="${Utils.escapeHTML(o.title)}" class="w-full h-full object-cover img-zoom" /></div>
-          <p class="font-display text-sm text-ink-strong mt-3">${Utils.escapeHTML(o.title)}</p>
-          <p class="text-[10px] uppercase tracking-lux text-ink-muted mt-1">${Utils.escapeHTML(o.level)}</p>
-        </a>`).join('');
-    }
+    Utils.qs('#instructor-other-wrap')?.classList.add('hidden');
   }
 
-  function parseDurationHours(s) {
-    const m = (s || '').match(/(\d+)/);
-    return m ? Number(m[1]) : 6;
-  }
-
-  function addHours(time, h) {
-    const [hh, mm] = (time || '00:00').split(':').map(Number);
-    const t = (hh + h) % 24;
-    return String(t).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
-  }
-
-  /* ---- BOOKING form ------------------------------------------ */
   function buildSlots() {
     const grid = Utils.qs('#slot-grid');
     if (!grid) return;
+    if (availableSessions.length === 0) {
+      grid.innerHTML = '<p class="text-ink-muted italic col-span-2">No upcoming sessions.</p>';
+      return;
+    }
     grid.innerHTML = availableSessions.map((s, i) => `
       <button type="button" role="radio" data-slot="${i}" class="slot-btn text-left p-4 border transition-colors">
         <span class="block text-[11px] uppercase tracking-lux opacity-70">${s.label}</span>
@@ -222,7 +184,7 @@
       state.selectedSlot = Number(btn.getAttribute('data-slot'));
       const sel = availableSessions[state.selectedSlot];
       Utils.qs('#m-date').textContent = sel.dateLong;
-      Utils.qs('#m-time').textContent = `${sel.time} – ${addHours(sel.time, parseDurationHours(workshop.duration))}`;
+      Utils.qs('#m-time').textContent = sel.time;
       refresh();
     });
   }
@@ -247,7 +209,6 @@
     });
   }
 
-  /* ---- WAITLIST form ----------------------------------------- */
   function bindWaitlistForm() {
     const user = Store.User.get();
     if (user) {
@@ -256,25 +217,12 @@
     }
     Utils.qs('#waitlist-form').addEventListener('submit', async e => {
       e.preventDefault();
-      const name = Utils.qs('#wl-name').value.trim();
-      const email = Utils.qs('#wl-email').value.trim();
       const msg = Utils.qs('#wl-msg');
-      if (!email) { msg.textContent = 'Please share your email.'; msg.className = 'mb-4 text-[11px] min-h-[1rem] text-accent'; return; }
-
-      const result = await GALLERY.api.joinWaitlist({ workshopId: workshop.id, name, email });
-      if (!result.ok) {
-        if (result.error === 'already_on_waitlist') msg.textContent = "You're already on the waitlist — we'll be in touch.";
-        else msg.textContent = 'Could not add you to the waitlist — please try again.';
-        msg.className = 'mb-4 text-[11px] min-h-[1rem] text-accent';
-        return;
-      }
-      msg.textContent = 'You\'re on the list. We\'ll write to ' + email + ' the moment a seat opens.';
+      msg.textContent = 'Added to waitlist locally — backend endpoint not enabled.';
       msg.className = 'mb-4 text-[11px] min-h-[1rem] text-brand';
-      e.target.querySelector('button[type=submit]').disabled = true;
     });
   }
 
-  /* ---- Modal & global -------------------------------------- */
   function bindGlobals() {
     Utils.qs('#modal-close')?.addEventListener('click', closeModal);
     Utils.qs('#modal')?.addEventListener('click', e => {
@@ -295,8 +243,7 @@
     if (!code) { state.discountPct = 0; state.discountCode = null; msg.textContent = ''; refresh(); return; }
     const result = await GALLERY.api.validateCoupon(code);
     if (result.ok) {
-      state.discountPct = result.pct;
-      state.discountCode = result.code;
+      state.discountPct = result.pct; state.discountCode = result.code;
       msg.textContent = `Applied — ${state.discountPct}% off your reservation.`;
       msg.className = 'mt-2 text-[11px] min-h-[1rem] text-brand';
     } else {
@@ -308,24 +255,22 @@
   }
 
   function refresh() {
-    // Spots badge (informs the user regardless of form state)
     const badge = Utils.qs('#spots-badge');
-    const left = workshop.spotsLeft;
-    if (workshop.complimentary) {
-      badge.textContent = 'Open Daily'; badge.className = 'bg-brand text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
-    } else if (availableSessions.length === 0) {
-      badge.textContent = 'Off Programme'; badge.className = 'bg-ink-strong text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
-    } else if (left <= 0 && workshop.waitlist) {
-      badge.textContent = 'Waitlist Open'; badge.className = 'bg-accent text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
-    } else if (left <= 0) {
-      badge.textContent = 'Sold Out'; badge.className = 'bg-ink-strong text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
-    } else if (left <= 3) {
-      badge.textContent = left + (left === 1 ? ' Spot Left' : ' Spots Left'); badge.className = 'bg-accent text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
-    } else {
-      badge.textContent = left + ' Spots Left'; badge.className = 'bg-brand text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
+    if (badge) {
+      const left = workshop.spotsLeft;
+      if (workshop.complimentary) {
+        badge.textContent = 'Open'; badge.className = 'bg-brand text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
+      } else if (availableSessions.length === 0) {
+        badge.textContent = 'Off Programme'; badge.className = 'bg-ink-strong text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
+      } else if (left <= 0) {
+        badge.textContent = 'Sold Out'; badge.className = 'bg-ink-strong text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
+      } else if (left <= 3) {
+        badge.textContent = left + (left === 1 ? ' Spot Left' : ' Spots Left'); badge.className = 'bg-accent text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
+      } else {
+        badge.textContent = left + ' Spots Left'; badge.className = 'bg-brand text-white text-[10px] uppercase tracking-lux px-3 py-1.5';
+      }
     }
 
-    // Booking-form bits (only meaningful if form is visible)
     if (!Utils.qs('#booking-form').classList.contains('hidden')) {
       Utils.qsa('.slot-btn').forEach(btn => {
         const i = Number(btn.getAttribute('data-slot'));
@@ -354,71 +299,53 @@
       }
       Utils.qs('#sum-total').innerHTML = Utils.fmtMoney(total) + ' <span class="text-base text-ink-muted tracking-normal">USD</span>';
     }
-
-    const m = Utils.qs('#m-capacity');
-    if (m) m.textContent = workshop.complimentary
-      ? `${workshop.capacity} guests welcome`
-      : `${workshop.spotsLeft} of ${workshop.capacity} seats available`;
   }
 
   async function bookNow() {
+    if (!Store.User.isAuthed()) {
+      Utils.toast('Sign in to reserve a seat');
+      setTimeout(() => location.href = 'auth.html?next=' + encodeURIComponent(location.pathname + location.search), 600);
+      return;
+    }
     const session = availableSessions[state.selectedSlot];
     if (!session) { Utils.toast('Pick a session first'); return; }
 
-    const result = await GALLERY.api.createReservation({
-      workshopId: workshop.id,
-      sessionDate: session.date,
-      participants: state.participants,
-      discountCode: state.discountCode,
-    });
+    try {
+      const result = await GALLERY.api.createReservation({
+        workshopId: workshop.id,
+        participants: state.participants,
+      });
 
-    if (!result.ok) {
-      if (result.error === 'no_capacity') Utils.toast('Not enough seats remain');
-      else if (result.error === 'session_past') Utils.toast('That session is in the past');
-      else Utils.toast('Could not book — please try again');
-      return;
+      const subtotal = (workshop.price || 0) * state.participants;
+      const discount = Math.round(subtotal * state.discountPct / 100);
+      const total = subtotal - discount;
+
+      if (!workshop.complimentary) {
+        workshop.spotsLeft = Math.max(0, workshop.spotsLeft - state.participants);
+      }
+
+      const user = Store.User.get();
+      const email = (user && user.email) || 'your inbox';
+
+      if (Utils.qs('#modal-resid')) Utils.qs('#modal-resid').textContent = '#' + (result.reservationId || '—');
+      if (Utils.qs('#modal-session')) Utils.qs('#modal-session').textContent = `${session.dateLong} · ${session.time}`;
+      if (Utils.qs('#modal-participants')) Utils.qs('#modal-participants').textContent = state.participants + (state.participants === 1 ? ' guest' : ' guests');
+      if (Utils.qs('#modal-total')) Utils.qs('#modal-total').textContent = workshop.complimentary ? 'Complimentary' : Utils.fmtMoney(total) + ' USD';
+      if (Utils.qs('#modal-email-note')) Utils.qs('#modal-email-note').textContent = `A confirmation is on its way to ${email}.`;
+      Utils.qs('#modal').classList.remove('hidden');
+      Utils.qs('#modal').classList.add('flex');
+      document.body.style.overflow = 'hidden';
+
+      if (!workshop.complimentary && workshop.spotsLeft === 0) selectMode();
+      refresh();
+    } catch (e) {
+      if (e.status === 401) {
+        Utils.toast('Session expired — please sign in again');
+        setTimeout(() => location.href = 'auth.html', 600);
+      } else {
+        Utils.toast(e.message || 'Could not create reservation');
+      }
     }
-
-    const subtotal = (workshop.price || 0) * state.participants;
-    const discount = Math.round(subtotal * state.discountPct / 100);
-    const total = subtotal - discount;
-
-    Store.Reservations.add({
-      id: result.reservationId,
-      workshopId: workshop.id,
-      workshopTitle: workshop.title,
-      instructor: workshop.instructor,
-      sessionDate: session.date,
-      sessionLabel: session.dateLong,
-      sessionTime: session.time,
-      participants: state.participants,
-      total,
-      discountCode: state.discountCode,
-      status: 'Confirmed',
-    });
-
-    // Update local in-memory copy so the page refreshes accurately
-    if (!workshop.complimentary) {
-      workshop.spotsLeft = Math.max(0, workshop.spotsLeft - state.participants);
-    }
-
-    const user = Store.User.get();
-    const email = (user && user.email) || 'your inbox';
-
-    Utils.qs('#modal-resid').textContent = result.reservationId;
-    Utils.qs('#modal-session').textContent = `${session.dateLong} · ${session.time}`;
-    Utils.qs('#modal-participants').textContent = state.participants + (state.participants === 1 ? ' guest' : ' guests');
-    Utils.qs('#modal-total').textContent = workshop.complimentary ? 'Complimentary' : Utils.fmtMoney(total) + ' USD';
-    Utils.qs('#modal-email-note').textContent = `A confirmation with calendar invite is on its way to ${email}.`;
-    Utils.qs('#modal').classList.remove('hidden');
-    Utils.qs('#modal').classList.add('flex');
-    document.body.style.overflow = 'hidden';
-
-    // If we just filled the last seat → switch the page to sold-out mode
-    if (!workshop.complimentary && workshop.spotsLeft === 0) {
-      selectMode();
-    }
-    refresh();
   }
 
   function closeModal() {
@@ -427,25 +354,36 @@
     document.body.style.overflow = '';
   }
 
-  /* ---- Reviews (Req 12 + 13 + 14) -------------------------- */
+  /* ---- Reviews ---- */
   async function renderReviews() {
     const list = Utils.qs('#review-list');
-    const reviews = await GALLERY.api.listReviews(workshop.id, reviewSort);
+    if (!list) return;
+    let reviews = [];
+    let meta = { average: 0, total: 0 };
+    try {
+      reviews = await GALLERY.api.listReviews(workshop.id, reviewSort, 'etkinlik');
+      meta = reviews.meta || meta;
+    } catch (e) {
+      list.innerHTML = '<p class="md:col-span-2 text-ink-muted italic">Reviews unavailable right now.</p>';
+      return;
+    }
 
     if (reviews.length === 0) {
       list.innerHTML = '<p class="md:col-span-2 text-ink-muted italic">No reviews yet for this workshop.</p>';
       Utils.qs('#review-summary').innerHTML = '<p class="text-sm text-ink-muted">Be the first to attend.</p>';
       return;
     }
-    const original = GALLERY.getReviews(workshop.id);
-    const isAdmin = Store.User.isAdmin();
 
-    list.innerHTML = reviews.map(r => {
-      const idx = original.indexOf(r);
-      const voted = Store.ReviewVotes.has(`${workshop.id}:${idx}`);
-      const hasReply = !!r.reply;
+    const isAdmin = Store.User.isAdmin();
+    list.innerHTML = reviews.map((r, idx) => {
+      const adminBox = isAdmin && !r.reply ? `
+        <div class="mt-5 bg-bg border border-line border-dashed p-4" data-rid="${r.id}">
+          <p class="text-[10px] uppercase tracking-lux text-ink-muted mb-2">Curator Reply (admin)</p>
+          <textarea class="admin-reply-input w-full border border-line p-2 text-sm bg-transparent focus:outline-none focus:border-brand resize-none" rows="2" placeholder="Write a curator's response…"></textarea>
+          <button type="button" class="admin-reply-save mt-2 bg-brand hover:bg-brand-hover text-white px-4 py-2 text-[10px] uppercase tracking-lux" data-rid="${r.id}">Post Reply</button>
+        </div>` : '';
       return `
-        <article class="bg-surface border border-line p-8" data-review-idx="${idx}">
+        <article class="bg-surface border border-line p-8" data-rid="${r.id}">
           <header class="flex items-start justify-between mb-4">
             <div>
               <h3 class="font-display text-lg text-ink-strong">${Utils.escapeHTML(r.author)}</h3>
@@ -455,68 +393,45 @@
           </header>
           <div class="flex items-center gap-0.5 text-accent mb-4">${Utils.stars(r.rating, 14)}</div>
           <p class="font-display italic text-ink-strong leading-relaxed">"${Utils.escapeHTML(r.body)}"</p>
-          ${hasReply ? `<div class="reply-display mt-6 bg-bg-soft border-l-2 border-brand p-4">
+          ${r.reply ? `<div class="mt-6 bg-bg-soft border-l-2 border-brand p-4">
             <p class="text-[10px] uppercase tracking-lux text-ink-muted mb-2">Curator's Response</p>
             <p class="text-sm text-ink-strong leading-relaxed">${Utils.escapeHTML(r.reply)}</p>
-          </div>` : `<div class="reply-display hidden mt-6 bg-bg-soft border-l-2 border-brand p-4"><p class="text-[10px] uppercase tracking-lux text-ink-muted mb-2">Curator's Response</p><p class="text-sm text-ink-strong"></p></div>`}
-          ${isAdmin ? `
-          <div class="reply-form hidden mt-4 bg-bg-soft border border-line p-4">
-            <textarea class="reply-input w-full text-sm border border-line p-2 bg-transparent focus:outline-none focus:border-brand resize-none" rows="2" placeholder="Write a curator's response…">${hasReply ? Utils.escapeHTML(r.reply) : ''}</textarea>
-            <div class="flex gap-2 mt-2">
-              <button type="button" class="reply-save bg-brand hover:bg-brand-hover text-white px-4 py-2 text-[11px] uppercase tracking-lux transition-colors" data-idx="${idx}">Save Reply</button>
-              <button type="button" class="reply-cancel border border-line px-4 py-2 text-[11px] uppercase tracking-lux text-ink-muted hover:border-brand" data-idx="${idx}">Cancel</button>
-            </div>
           </div>` : ''}
+          ${adminBox}
           <div class="mt-5 flex gap-4 text-[11px] uppercase tracking-lux text-ink-muted">
-            <button class="helpful-btn hover:text-brand ${voted ? 'text-brand' : ''}" data-idx="${idx}">▲ Helpful (${r.helpful || 0})</button>
-            ${isAdmin ? `<button class="reply-toggle hover:text-brand" data-idx="${idx}">${hasReply ? 'Edit Reply' : '↳ Reply'}</button>` : ''}
+            <button class="helpful-btn hover:text-brand" data-idx="${idx}" data-rid="${r.id}">▲ Helpful (${r.helpful || 0})</button>
           </div>
         </article>`;
     }).join('');
 
-    const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
-    Utils.qs('#review-summary').innerHTML = `<div class="flex items-center gap-1 text-accent">${Utils.stars(Math.round(avg), 18)}</div><p class="text-sm text-ink-strong"><strong>${avg}</strong> <span class="text-ink-muted">· based on ${reviews.length} reviews</span></p>`;
+    const avg = (meta.average || (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)).toFixed(1);
+    Utils.qs('#review-summary').innerHTML = `<div class="flex items-center gap-1 text-accent">${Utils.stars(Math.round(Number(avg)), 18)}</div><p class="text-sm text-ink-strong"><strong>${avg}</strong> <span class="text-ink-muted">· based on ${meta.total || reviews.length} reviews</span></p>`;
 
     Utils.qsa('.helpful-btn', list).forEach(b => b.addEventListener('click', async () => {
+      if (!Store.User.isAuthed()) { Utils.toast('Sign in to vote'); return; }
       const idx = Number(b.getAttribute('data-idx'));
-      const result = await GALLERY.api.toggleReviewHelpful(workshop.id, idx);
-      if (!result.ok) return;
-      Utils.toast(result.on ? 'Marked helpful' : 'Vote removed');
-      renderReviews();
+      const reviewId = Number(b.getAttribute('data-rid'));
+      try {
+        await GALLERY.api.toggleReviewHelpful(workshop.id, idx, reviewId);
+        Utils.toast('Vote recorded');
+        renderReviews();
+      } catch (e) { Utils.toast(e.message || 'Could not vote'); }
     }));
 
-    // Admin reply actions
-    Utils.qsa('.reply-toggle', list).forEach(btn => {
-      btn.addEventListener('click', () => {
-        const card = btn.closest('[data-review-idx]');
-        const form = card.querySelector('.reply-form');
-        if (!form) return;
-        form.classList.toggle('hidden');
-        if (!form.classList.contains('hidden')) {
-          const input = form.querySelector('.reply-input');
-          if (input) input.focus();
-        }
-      });
-    });
-    Utils.qsa('.reply-save', list).forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const card = btn.closest('[data-review-idx]');
-        const idx = Number(btn.getAttribute('data-idx'));
-        const input = card.querySelector('.reply-input');
+    if (isAdmin) {
+      Utils.qsa('.admin-reply-save', list).forEach(b => b.addEventListener('click', async () => {
+        const reviewId = Number(b.getAttribute('data-rid'));
+        const card = b.closest('[data-rid]');
+        const input = card.querySelector('.admin-reply-input');
         const text = (input ? input.value : '').trim();
-        if (!text) { Utils.toast('Reply text is required'); return; }
-        const result = await GALLERY.api.replyToReview(workshop.id, idx, text);
-        if (!result.ok) { Utils.toast('Could not save reply'); return; }
-        Utils.toast('Curator reply saved');
-        renderReviews();
-      });
-    });
-    Utils.qsa('.reply-cancel', list).forEach(btn => {
-      btn.addEventListener('click', () => {
-        const card = btn.closest('[data-review-idx]');
-        card.querySelector('.reply-form')?.classList.add('hidden');
-      });
-    });
+        if (text.length < 5) { Utils.toast('Reply must be at least 5 characters'); return; }
+        try {
+          await GALLERY.api.replyToReview(reviewId, text);
+          Utils.toast('Reply posted');
+          renderReviews();
+        } catch (e) { Utils.toast(e.message || 'Could not post reply'); }
+      }));
+    }
   }
 
   function bindReviewSort() {
@@ -528,53 +443,7 @@
     });
   }
 
-  // Req 15: user must have a reservation for this workshop to review it
-  function userHasAttended() {
-    const allRes = Store.Reservations.listIncludingHistory
-      ? Store.Reservations.listIncludingHistory()
-      : Store.Reservations.list();
-    return allRes.some(r => r.workshopId === workshop.id);
-  }
-
-  // Show/hide workshop review form based on auth + attendance (Req 15)
-  function renderWorkshopReviewGate() {
-    const form = Utils.qs('#review-form');
-    const gateMsg = Utils.qs('#workshop-review-gate-msg');
-    if (!form) return;
-
-    const submitBtn = form.querySelector('[type=submit]');
-    const user = Store.User.get();
-
-    if (!user) {
-      if (submitBtn) submitBtn.disabled = true;
-      if (gateMsg) {
-        gateMsg.innerHTML = `<a href="auth.html?next=${encodeURIComponent(location.pathname + location.search)}" class="text-brand hover:underline">Sign in</a> to review. Only verified attendees may write a review.`;
-        gateMsg.className = 'text-sm text-ink-muted mb-6';
-      }
-      return;
-    }
-
-    if (!userHasAttended()) {
-      if (submitBtn) submitBtn.disabled = true;
-      if (gateMsg) {
-        gateMsg.innerHTML = `Reviews are open to past attendees only. <a href="workshops.html" class="text-brand hover:underline">Browse sessions</a> to register.`;
-        gateMsg.className = 'text-sm text-ink-muted mb-6';
-      }
-      return;
-    }
-
-    // Authed verified attendee — unlock
-    if (submitBtn) submitBtn.disabled = false;
-    if (gateMsg) {
-      gateMsg.textContent = 'You attended this workshop — your review will be marked as Verified Attendee.';
-      gateMsg.className = 'text-[11px] uppercase tracking-lux text-brand mb-6';
-    }
-  }
-
   function bindReviewForm() {
-    renderWorkshopReviewGate();
-    Store.subscribe('user', renderWorkshopReviewGate);
-
     Utils.qsa('.star').forEach(s => s.addEventListener('click', () => {
       userRating = Number(s.getAttribute('data-r'));
       Utils.qsa('.star').forEach(x => {
@@ -592,26 +461,20 @@
         setTimeout(() => location.href = 'auth.html?next=' + encodeURIComponent(location.pathname + location.search), 800);
         return;
       }
-      // Req 15: enforce attendance gate on submit too
-      if (!userHasAttended()) {
-        Utils.toast('Only past attendees may review this workshop');
-        return;
-      }
       const fd = new FormData(e.target);
-      const author = (fd.get('display') || Store.User.get().name || 'Anonymous').toString().trim();
       const body = (fd.get('body') || '').toString().trim();
-      if (!body) { Utils.toast('Please share a few words'); return; }
+      if (body.length < 10) { Utils.toast('Please share at least 10 characters'); return; }
 
-      const result = await GALLERY.api.createReview(workshop.id, {
-        author, body, rating: userRating, verified: true,
-        date: 'Attended · ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-      });
-      if (!result.ok) { Utils.toast('Could not submit review'); return; }
-      Utils.toast('Review submitted — marked as Verified Attendee');
-      e.target.reset();
-      userRating = 0;
-      Utils.qsa('.star').forEach(x => { x.classList.remove('text-accent'); x.classList.add('text-line'); });
-      renderReviews();
+      try {
+        await GALLERY.api.createReview(workshop.id, { rating: userRating, body }, 'etkinlik');
+        Utils.toast('Review submitted');
+        e.target.reset();
+        userRating = 0;
+        Utils.qsa('.star').forEach(x => { x.classList.remove('text-accent'); x.classList.add('text-line'); });
+        renderReviews();
+      } catch (err) {
+        Utils.toast(err.message || 'Could not submit review');
+      }
     });
   }
 })();

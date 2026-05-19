@@ -1,6 +1,6 @@
 /* ============================================================
-   pages/workshops.js — Atölye listeleme + filtre + compare seçimi
-   Backend-ready: tüm veri GALLERY.api üzerinden async çekilir.
+   pages/workshops.js — Atölye/etkinlik listeleme (backend bağlı)
+     GALLERY.api.listWorkshops() → /etkinlikler
    ============================================================ */
 
 (function () {
@@ -26,7 +26,6 @@
   }
 
   function bindViewToggle() {
-    // List view is the default; calendar is a stub for the assignment scope
     Utils.qs('#view-list')?.addEventListener('click', () => {
       Utils.qs('#view-list').className = 'px-5 py-3 bg-brand text-white text-[11px] uppercase tracking-lux';
       Utils.qs('#view-calendar').className = 'px-5 py-3 text-ink-strong text-[11px] uppercase tracking-lux hover:bg-bg-soft';
@@ -40,12 +39,15 @@
     const empty = Utils.qs('#empty-state');
     if (!root) return;
 
-    // Backend-bound call (today: in-memory; tomorrow: HTTP)
-    const list = await GALLERY.api.listWorkshops({
-      medium: state.medium,
-      level: state.level,
-      dateRange: state.dateRange,
-    });
+    let list = [];
+    try {
+      list = await GALLERY.api.listWorkshops({ medium: state.medium, level: state.level, dateRange: state.dateRange });
+    } catch (e) {
+      console.warn('workshops failed', e);
+      if (counter) counter.textContent = 'Backend offline';
+      root.innerHTML = '<p class="md:col-span-12 text-ink-muted italic py-12 text-center">Backend offline — start the Go server to see the programme.</p>';
+      return;
+    }
 
     if (counter) counter.textContent = `${list.length} ${list.length === 1 ? 'session' : 'sessions'} on offer`;
 
@@ -58,7 +60,6 @@
 
     root.innerHTML = list.map((w, i) => i === 0 ? featured(w) : standard(w, i)).join('');
 
-    // Restore checked state after re-render
     Utils.qsa('.compare-chk', root).forEach(chk => {
       if (compareSelected.has(chk.getAttribute('data-id'))) chk.checked = true;
       chk.addEventListener('change', () => {
@@ -70,8 +71,7 @@
   }
 
   function spotsLabel(w) {
-    if (w.complimentary) return '<span class="text-ink-strong">Open Daily</span>';
-    if (w.spotsLeft === 0 && w.waitlist) return '<span class="text-accent">Waitlist Open</span>';
+    if (w.complimentary) return '<span class="text-ink-strong">Open</span>';
     if (w.spotsLeft === 0) return '<span class="text-ink-strong">Sold Out</span>';
     if (w.spotsLeft <= 3) return `<span class="text-accent">${w.spotsLeft} of ${w.capacity} left</span>`;
     return `<span class="text-ink-strong">${w.spotsLeft} of ${w.capacity} seats</span>`;
@@ -79,32 +79,17 @@
 
   function priceLabel(w) {
     if (w.complimentary || !w.price) return 'Complimentary';
-    if (w.campaign && w.campaign.type === 'sale' && w.campaign.pct) {
-      const sale = Math.round(w.price * (100 - w.campaign.pct) / 100);
-      return `<span class="line-through text-ink-muted text-sm mr-1">${Utils.fmtMoney(w.price)}</span><span class="text-accent">${Utils.fmtMoney(sale)} USD</span>`;
-    }
     return Utils.fmtMoney(w.price) + ' USD';
   }
 
   function bookButton(w, variant) {
-    if (w.complimentary) {
-      return `<a href="workshop-detail.html?id=${w.id}" class="group ${variant === 'primary' ? 'bg-brand hover:bg-brand-hover text-white' : 'border border-ink-strong/30 text-ink-strong hover:bg-ink-strong hover:text-white'} px-6 py-4 text-[11px] uppercase tracking-lux flex items-center justify-between transition-colors">Reserve a Walk<svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`;
-    }
-    if (w.spotsLeft === 0 && w.waitlist) {
-      return `<a href="workshop-detail.html?id=${w.id}" class="bg-bg-image hover:bg-bg-soft text-ink-strong px-6 py-4 text-[11px] uppercase tracking-lux flex items-center justify-center transition-colors">Join Waitlist</a>`;
-    }
-    if (w.spotsLeft === 0) {
+    if (w.spotsLeft === 0 && !w.complimentary) {
       return `<button disabled class="bg-bg-image text-ink-muted px-6 py-4 text-[11px] uppercase tracking-lux cursor-not-allowed">Sold Out</button>`;
     }
-    return `<a href="workshop-detail.html?id=${w.id}" class="group ${variant === 'primary' ? 'bg-brand hover:bg-brand-hover text-white' : 'border border-ink-strong/30 text-ink-strong hover:bg-ink-strong hover:text-white'} px-6 py-4 text-[11px] uppercase tracking-lux flex items-center justify-between transition-colors">Book Now<svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`;
-  }
-
-  function campaignBadge(w) {
-    if (!w.campaign) return '';
-    const cls = w.campaign.type === 'sale' ? 'bg-accent text-white'
-              : w.campaign.type === 'new'  ? 'bg-brand text-white'
-              : 'bg-ink-strong text-white';
-    return `<span class="absolute top-4 left-4 ${cls} px-3 py-1 text-[10px] uppercase tracking-lux z-10">${Utils.escapeHTML(w.campaign.label)}</span>`;
+    const klass = variant === 'primary'
+      ? 'bg-brand hover:bg-brand-hover text-white'
+      : 'border border-ink-strong/30 text-ink-strong hover:bg-ink-strong hover:text-white';
+    return `<a href="workshop-detail.html?id=${w.id}" class="group ${klass} px-6 py-4 text-[11px] uppercase tracking-lux flex items-center justify-between transition-colors">${w.complimentary ? 'Reserve a Spot' : 'Book Now'}<svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`;
   }
 
   function featured(w) {
@@ -112,7 +97,6 @@
     return `
       <article class="md:col-span-8 flex flex-col md:flex-row gap-8 lg:gap-12">
         <a href="workshop-detail.html?id=${w.id}" class="md:w-3/5 overflow-hidden bg-bg-image group relative block">
-          ${campaignBadge(w)}
           <img src="${Utils.img(w.image, 1200)}" alt="${Utils.escapeHTML(w.title)}" class="w-full aspect-[4/3] object-cover img-zoom" />
         </a>
         <div class="md:w-2/5 flex flex-col gap-4">
@@ -120,7 +104,7 @@
             <span class="text-ink-muted">${Utils.escapeHTML(w.category)} · ${Utils.escapeHTML(w.level)}</span>
             ${spotsLabel(w)}
           </div>
-          <h2 class="font-display text-3xl text-ink-strong leading-tight">${Utils.escapeHTML(w.title)} <span class="italic text-ink-muted">with ${Utils.escapeHTML(w.instructor)}</span></h2>
+          <h2 class="font-display text-3xl text-ink-strong leading-tight">${Utils.escapeHTML(w.title)}</h2>
           <div class="text-sm text-ink-muted space-y-1">
             <p>${Utils.escapeHTML(session.dateLong)}${session.time ? ' · ' + session.time : ''}</p>
             <p>${Utils.escapeHTML(w.duration || '')} · ${Utils.escapeHTML(w.location || '')}</p>
@@ -149,7 +133,6 @@
     return `
       <article class="${layout.col} flex flex-col gap-4">
         <a href="workshop-detail.html?id=${w.id}" class="overflow-hidden bg-bg-image group block relative">
-          ${campaignBadge(w)}
           <img src="${Utils.img(w.image, 900)}" alt="${Utils.escapeHTML(w.title)}" class="w-full ${layout.aspect} object-cover img-zoom" />
         </a>
         <div class="flex justify-between text-[11px] uppercase tracking-lux">
@@ -157,7 +140,6 @@
           ${spotsLabel(w)}
         </div>
         <h2 class="font-display text-2xl text-ink-strong leading-tight">${Utils.escapeHTML(w.title)}</h2>
-        <p class="text-sm text-ink-muted italic">with ${Utils.escapeHTML(w.instructor)}</p>
         <div class="text-sm text-ink-muted space-y-1">
           <p>${Utils.escapeHTML(session.dateLong)}${session.time ? ' · ' + session.time : ''}</p>
           <p class="text-ink-strong font-medium">${priceLabel(w)}</p>

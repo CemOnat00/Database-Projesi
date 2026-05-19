@@ -1,36 +1,59 @@
 /* ============================================================
-   pages/artwork-detail.js — URL ?id= ile eser yükle, favori,
-   thumbnail değiştir, yorum ekle.
+   pages/artwork-detail.js — URL ?id= ile eser yükle (backend bağlı)
+     • GET /eserler/:id          → detay
+     • GET /yorumlar/:id?tip=eser → yorumlar (sort param)
+     • POST /yorumlar             → yorum gönder (giriş gerekli)
+     • POST /yorumlar/:id/faydali → helpful oy
+     • POST /favoriler / DELETE /favoriler/:id → favori toggle
+     • POST /admin/yorumlar/:id/yanit → admin yanıtı (yalnızca admin)
    ============================================================ */
 
 (function () {
   'use strict';
 
   let artwork = null;
+  let allArtworks = [];   // sanatçının diğer eserleri için
   let userRating = 0;
-  let reviewSort = 'recent'; // 'recent' | 'rating' | 'helpful'
+  let reviewSort = 'recent';
+  let isFavorite = false;
 
-  Utils.onReady(function () {
+  Utils.onReady(init);
+
+  async function init() {
     const idParam = Utils.paramId('id');
-    const id = idParam || 'midnight-resonance';
+    const id = idParam || null;
+    if (!id) { renderNotFound('—'); return; }
 
-    // If URL has an id but it's not in the dataset → show not-found and stop
-    if (idParam && !GALLERY.ARTWORKS.some(a => a.id === idParam)) {
-      renderNotFound(idParam);
+    try {
+      artwork = await GALLERY.api.getArtwork(id);
+    } catch (e) {
+      console.warn('artwork-detail: load failed', e);
+      renderNotFound(id);
       return;
     }
+    if (!artwork) { renderNotFound(id); return; }
 
-    artwork = GALLERY.getArtwork(id);
     document.title = `${artwork.title} — ${artwork.artist} | The Curated Gallery`;
+
     renderHero();
     renderInfo();
+    await loadFavoriteState();
+    updateFavButton();
+    bindActions();
+
+    // Diğer eserler (sanatçıya göre)
+    try { allArtworks = await GALLERY.api.listArtworks(); } catch (_) { allArtworks = []; }
     renderArtistAndReviews();
     bindForms();
+  }
 
-    // Increment view count locally (simulates analytics)
-    artwork.stats.views = (artwork.stats.views || 0) + 1;
-    Utils.qs('#stat-views').textContent = artwork.stats.views.toLocaleString();
-  });
+  async function loadFavoriteState() {
+    if (!Store.User.isAuthed()) { isFavorite = false; return; }
+    try {
+      const ids = await GALLERY.api.favorites.list();
+      isFavorite = ids.includes(Number(artwork.id));
+    } catch (_) { isFavorite = false; }
+  }
 
   function renderNotFound(id) {
     const main = document.querySelector('main');
@@ -52,17 +75,15 @@
     Utils.qs('#bc-title').textContent = artwork.title;
 
     const hero = Utils.qs('#hero-image');
-    hero.src = Utils.img(artwork.images[0], 1600);
+    hero.src = Utils.img(artwork.images[0] || artwork.image, 1600);
     hero.alt = artwork.title;
 
     const tg = Utils.qs('#thumb-grid');
-    // Show only the artwork's own images — no padding from unrelated pieces
-    const imgs = artwork.images.slice(0, 4);
+    const imgs = (artwork.images || []).slice(0, 4);
     if (imgs.length <= 1) {
       tg.classList.add('hidden');
     } else {
       tg.classList.remove('hidden');
-      // Adjust grid columns to actual count so thumbs sit comfortably
       tg.className = `grid gap-3 grid-cols-${Math.min(imgs.length, 4)}`;
       tg.innerHTML = imgs.map((src, i) => `
         <button class="thumb overflow-hidden aspect-square ${i === 0 ? 'ring-1 ring-ink-strong ring-offset-2 ring-offset-bg' : ''}" data-src="${Utils.img(src, 1600)}" aria-label="View image ${i + 1}">
@@ -84,31 +105,42 @@
     Utils.qs('#a-desc').textContent = artwork.description;
     Utils.qs('#a-price').innerHTML = `${Utils.fmtMoney(artwork.price)} <span class="text-base text-ink-muted">USD</span>`;
 
-    // Details table
     Utils.qs('#det-medium').textContent = artwork.medium;
-    Utils.qs('#det-dim').textContent = artwork.dimensions;
+    Utils.qs('#det-dim').textContent = artwork.dimensions || '—';
     Utils.qs('#det-year').textContent = artwork.year;
     Utils.qs('#det-edition').textContent = artwork.edition || 'Unique work';
     Utils.qs('#det-auth').textContent = artwork.authenticity || 'Certificate included';
     Utils.qs('#det-shipping').textContent = artwork.shipping || 'Worldwide · insured';
 
-    // Stats
-    Utils.qs('#stat-likes').textContent = artwork.stats.likes;
-    Utils.qs('#stat-views').textContent = artwork.stats.views.toLocaleString();
-    Utils.qs('#stat-reviews').textContent = artwork.stats.reviewCount;
+    Utils.qs('#stat-likes').textContent = artwork.stats.likes || 0;
+    Utils.qs('#stat-views').textContent = (artwork.stats.views || 0).toLocaleString();
+    Utils.qs('#stat-reviews').textContent = artwork.stats.reviewCount || 0;
+  }
 
-    // Favorite button (backend-ready via GALLERY.api.favorites)
-    updateFavButton();
+  function bindActions() {
     Utils.qs('#fav-btn').addEventListener('click', async () => {
-      const wasOn = Store.Favorites.has(artwork.id);
-      const result = await GALLERY.api.favorites.toggle(artwork.id);
-      updateFavButton();
-      Utils.toast(result.on ? 'Added to favorites' : 'Removed from favorites');
+      if (!Store.User.isAuthed()) {
+        Utils.toast('Sign in to save favorites');
+        setTimeout(() => location.href = 'auth.html?next=' + encodeURIComponent(location.pathname + location.search), 600);
+        return;
+      }
+      try {
+        if (isFavorite) {
+          await GALLERY.api.favorites.remove(artwork.id);
+          isFavorite = false;
+          Utils.toast('Removed from favorites');
+        } else {
+          await GALLERY.api.favorites.add(artwork.id);
+          isFavorite = true;
+          Utils.toast('Added to favorites');
+        }
+        updateFavButton();
+      } catch (e) {
+        Utils.toast(e.message || 'Could not update favorite');
+      }
     });
-    // Sync if another tab/page edits favorites
     Store.subscribe('favorites', updateFavButton);
 
-    // Add to cart
     Utils.qs('#add-cart-btn').addEventListener('click', () => {
       if (artwork.sold) { Utils.toast('This work is sold.'); return; }
       Store.Cart.add({
@@ -116,7 +148,7 @@
         refId: artwork.id,
         title: artwork.title,
         artist: artwork.artist,
-        image: artwork.images[0],
+        image: artwork.images[0] || artwork.image,
         price: artwork.price,
       });
       Utils.toast('Added to cart');
@@ -124,11 +156,11 @@
   }
 
   function updateFavButton() {
-    const fav = Store.Favorites.has(artwork.id);
     const btn = Utils.qs('#fav-btn');
-    Utils.qs('#fav-icon').outerHTML = Utils.heart(fav).replace('<svg', '<svg id="fav-icon"');
-    Utils.qs('#fav-label').textContent = fav ? 'In Favorites' : 'Add to Favorites';
-    btn.classList.toggle('text-accent', fav);
+    if (!btn) return;
+    Utils.qs('#fav-icon').outerHTML = Utils.heart(isFavorite).replace('<svg', '<svg id="fav-icon"');
+    Utils.qs('#fav-label').textContent = isFavorite ? 'In Favorites' : 'Add to Favorites';
+    btn.classList.toggle('text-accent', isFavorite);
   }
 
   function renderArtistAndReviews() {
@@ -136,28 +168,26 @@
     Utils.qs('#artist-bio').textContent = artwork.artistBio
       || 'Biographical details for this artist are being prepared. Write to the curator for an introduction.';
 
-    const others = GALLERY.ARTWORKS.filter(a => a.artist === artwork.artist && a.id !== artwork.id).slice(0, 3);
+    const others = allArtworks.filter(a => a.artistId === artwork.artistId && a.id !== artwork.id).slice(0, 3);
     const heading = Utils.qs('#artist-other-heading');
     let otherList = others;
     if (others.length === 0) {
-      otherList = GALLERY.ARTWORKS.filter(a => a.id !== artwork.id).slice(0, 3);
+      otherList = allArtworks.filter(a => a.id !== artwork.id).slice(0, 3);
       if (heading) heading.textContent = 'You may also like';
-    } else {
-      if (heading) heading.textContent = `More by ${artwork.artist}`;
+    } else if (heading) {
+      heading.textContent = `More by ${artwork.artist}`;
     }
 
     Utils.qs('#artist-other').innerHTML = otherList.map(o => `
       <a href="artwork-detail.html?id=${o.id}" class="group block">
-        <div class="overflow-hidden bg-bg-image aspect-square"><img src="${Utils.img(o.images[0], 600)}" alt="${Utils.escapeHTML(o.title)}" class="w-full h-full object-cover img-zoom" /></div>
+        <div class="overflow-hidden bg-bg-image aspect-square"><img src="${Utils.img(o.images[0] || o.image, 600)}" alt="${Utils.escapeHTML(o.title)}" class="w-full h-full object-cover img-zoom" /></div>
         <p class="font-display text-sm text-ink-strong mt-3">${Utils.escapeHTML(o.title)}</p>
         <p class="text-[10px] uppercase tracking-lux text-ink-muted mt-1">${Utils.escapeHTML(o.artist)}</p>
       </a>
     `).join('');
 
-    // Reviews — sorted via API, sort select hooked up, helpful clickable
     renderReviewList();
 
-    // Bind the sort dropdown (Req 13)
     const sortEl = Utils.qs('#review-sort');
     if (sortEl) {
       sortEl.addEventListener('change', e => {
@@ -168,78 +198,78 @@
   }
 
   async function renderReviewList() {
-    const reviews = await GALLERY.api.listReviews(artwork.id, reviewSort);
-    const avg = reviews.length
-      ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-      : '0.0';
-    Utils.qs('#rev-stars').innerHTML = `<div class="flex items-center gap-1 text-accent">${Utils.stars(Math.round(avg), 16)}</div>`;
-    Utils.qs('#rev-summary').innerHTML = `<strong>${avg}</strong> <span class="text-ink-muted">· ${reviews.length} reviews</span>`;
-
     const list = Utils.qs('#review-list');
-    if (reviews.length === 0) {
-      list.innerHTML = `<p class="text-ink-muted italic">No reviews yet — be the first to share an impression.</p>`;
+    list.innerHTML = '<p class="md:col-span-2 text-ink-muted italic">Loading reviews…</p>';
+
+    let reviews = [];
+    let meta = { average: 0, total: 0 };
+    try {
+      reviews = await GALLERY.api.listReviews(artwork.id, reviewSort, 'eser');
+      meta = reviews.meta || meta;
+    } catch (e) {
+      console.warn('listReviews failed', e);
+      list.innerHTML = '<p class="md:col-span-2 text-ink-muted italic">Reviews unavailable right now.</p>';
       return;
     }
-    // We need indexes that map back into GALLERY.REVIEWS[artwork.id] so the helpful
-    // counter increments the correct record regardless of current sort order.
-    const original = GALLERY.getReviews(artwork.id);
-    list.innerHTML = reviews.map(r => {
-      const realIdx = original.indexOf(r);
-      return reviewCard(r, realIdx);
-    }).join('');
+
+    const avg = reviews.length
+      ? (meta.average || (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)).toFixed(1)
+      : '0.0';
+    Utils.qs('#rev-stars').innerHTML = `<div class="flex items-center gap-1 text-accent">${Utils.stars(Math.round(Number(avg)), 16)}</div>`;
+    Utils.qs('#rev-summary').innerHTML = `<strong>${avg}</strong> <span class="text-ink-muted">· ${meta.total || reviews.length} reviews</span>`;
+
+    if (reviews.length === 0) {
+      list.innerHTML = `<p class="md:col-span-2 text-ink-muted italic">No reviews yet — be the first to share an impression.</p>`;
+      return;
+    }
+
+    const isAdmin = Store.User.isAdmin();
+    list.innerHTML = reviews.map((r, idx) => reviewCard(r, idx, isAdmin)).join('');
 
     Utils.qsa('.helpful-btn', list).forEach(b => b.addEventListener('click', async () => {
+      if (!Store.User.isAuthed()) {
+        Utils.toast('Sign in to vote');
+        setTimeout(() => location.href = 'auth.html?next=' + encodeURIComponent(location.pathname + location.search), 600);
+        return;
+      }
       const idx = Number(b.getAttribute('data-idx'));
-      const result = await GALLERY.api.toggleReviewHelpful(artwork.id, idx);
-      if (!result.ok) return;
-      Utils.toast(result.on ? 'Marked helpful' : 'Vote removed');
-      renderReviewList();
+      const reviewId = Number(b.getAttribute('data-rid'));
+      try {
+        await GALLERY.api.toggleReviewHelpful(artwork.id, idx, reviewId);
+        Utils.toast('Vote recorded');
+        renderReviewList();
+      } catch (e) {
+        Utils.toast(e.message || 'Could not vote');
+      }
     }));
 
-    // Admin reply toggle
-    Utils.qsa('.reply-toggle', list).forEach(btn => {
-      btn.addEventListener('click', () => {
-        const card = btn.closest('[data-review-idx]');
-        const form = card.querySelector('.reply-form');
-        if (!form) return;
-        form.classList.toggle('hidden');
-        if (!form.classList.contains('hidden')) {
-          const input = form.querySelector('.reply-input');
-          if (input) input.focus();
-        }
-      });
-    });
-
-    // Admin reply save
-    Utils.qsa('.reply-save', list).forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const card = btn.closest('[data-review-idx]');
-        const idx = Number(btn.getAttribute('data-idx'));
-        const input = card.querySelector('.reply-input');
+    if (isAdmin) {
+      Utils.qsa('.admin-reply-save', list).forEach(b => b.addEventListener('click', async () => {
+        const reviewId = Number(b.getAttribute('data-rid'));
+        const card = b.closest('[data-rid]');
+        const input = card.querySelector('.admin-reply-input');
         const text = (input ? input.value : '').trim();
-        if (!text) { Utils.toast('Reply text is required'); return; }
-        const result = await GALLERY.api.replyToReview(artwork.id, idx, text);
-        if (!result.ok) { Utils.toast('Could not save reply'); return; }
-        Utils.toast('Curator reply saved');
-        renderReviewList();
-      });
-    });
-
-    // Admin reply cancel
-    Utils.qsa('.reply-cancel', list).forEach(btn => {
-      btn.addEventListener('click', () => {
-        const card = btn.closest('[data-review-idx]');
-        card.querySelector('.reply-form')?.classList.add('hidden');
-      });
-    });
+        if (text.length < 5) { Utils.toast('Reply must be at least 5 characters'); return; }
+        try {
+          await GALLERY.api.replyToReview(reviewId, text);
+          Utils.toast('Reply posted');
+          renderReviewList();
+        } catch (e) {
+          Utils.toast(e.message || 'Could not post reply');
+        }
+      }));
+    }
   }
 
-  function reviewCard(r, idx) {
-    const voted = Store.ReviewVotes.has(`${artwork.id}:${idx}`);
-    const isAdmin = Store.User.isAdmin();
-    const hasReply = !!r.reply;
+  function reviewCard(r, idx, isAdmin) {
+    const adminBox = isAdmin && !r.reply ? `
+      <div class="mt-5 bg-bg border border-line border-dashed p-4" data-rid="${r.id}">
+        <p class="text-[10px] uppercase tracking-lux text-ink-muted mb-2">Curator Reply (admin)</p>
+        <textarea class="admin-reply-input w-full border border-line p-2 text-sm bg-transparent focus:outline-none focus:border-brand resize-none" rows="2" placeholder="Write a curator's response…"></textarea>
+        <button type="button" class="admin-reply-save mt-2 bg-brand hover:bg-brand-hover text-white px-4 py-2 text-[10px] uppercase tracking-lux" data-rid="${r.id}">Post Reply</button>
+      </div>` : '';
     return `
-      <article class="bg-surface border border-line p-7" data-review-idx="${idx}">
+      <article class="bg-surface border border-line p-7" data-rid="${r.id}">
         <header class="flex justify-between items-start mb-3">
           <div>
             <h3 class="font-display text-lg text-ink-strong">${Utils.escapeHTML(r.author)}</h3>
@@ -249,73 +279,19 @@
         </header>
         <div class="flex gap-0.5 text-accent mb-3">${Utils.stars(r.rating, 13)}</div>
         <p class="font-display italic text-ink-strong leading-relaxed">${Utils.escapeHTML(r.body)}</p>
-        ${hasReply ? `
-          <div class="reply-display mt-5 bg-bg-soft border-l-2 border-brand p-4">
+        ${r.reply ? `
+          <div class="mt-5 bg-bg-soft border-l-2 border-brand p-4">
             <p class="text-[10px] uppercase tracking-lux text-ink-muted mb-1">Curator's Response</p>
             <p class="text-sm text-ink-strong">${Utils.escapeHTML(r.reply)}</p>
-          </div>` : `<div class="reply-display hidden mt-5 bg-bg-soft border-l-2 border-brand p-4"><p class="text-[10px] uppercase tracking-lux text-ink-muted mb-1">Curator's Response</p><p class="text-sm text-ink-strong reply-text"></p></div>`
-        }
-        ${isAdmin ? `
-          <div class="reply-form hidden mt-4 bg-bg-soft border border-line p-4">
-            <textarea class="reply-input w-full text-sm border border-line p-2 bg-transparent focus:outline-none focus:border-brand resize-none" rows="2" placeholder="Write a curator's response…">${hasReply ? Utils.escapeHTML(r.reply) : ''}</textarea>
-            <div class="flex gap-2 mt-2">
-              <button type="button" class="reply-save bg-brand hover:bg-brand-hover text-white px-4 py-2 text-[11px] uppercase tracking-lux transition-colors" data-idx="${idx}">Save Reply</button>
-              <button type="button" class="reply-cancel border border-line px-4 py-2 text-[11px] uppercase tracking-lux text-ink-muted hover:border-brand" data-idx="${idx}">Cancel</button>
-            </div>
           </div>` : ''}
+        ${adminBox}
         <div class="mt-4 flex gap-4 text-[11px] uppercase tracking-lux text-ink-muted">
-          <button class="helpful-btn hover:text-brand ${voted ? 'text-brand' : ''}" data-idx="${idx}">▲ Helpful (${r.helpful || 0})</button>
-          ${isAdmin ? `<button class="reply-toggle hover:text-brand" data-idx="${idx}">${hasReply ? 'Edit Reply' : '↳ Reply'}</button>` : ''}
+          <button class="helpful-btn hover:text-brand" data-idx="${idx}" data-rid="${r.id}">▲ Helpful (${r.helpful || 0})</button>
         </div>
       </article>`;
   }
 
-  // Check if current user has purchased this artwork (local orders + demo orders)
-  function userHasBought() {
-    const allOrders = Store.Orders.list().concat(GALLERY.ORDERS);
-    return allOrders.some(o => (o.items || []).some(it => it.type === 'artwork' && it.refId === artwork.id));
-  }
-
-  // Show/hide the review form based on auth state and purchase verification (Req 15)
-  function renderReviewFormGate() {
-    const form = Utils.qs('#review-form');
-    const gateMsg = Utils.qs('#review-gate-msg');
-    if (!form) return;
-
-    const submitBtn = form.querySelector('[type=submit]');
-    const user = Store.User.get();
-
-    if (!user) {
-      if (submitBtn) submitBtn.disabled = true;
-      if (gateMsg) {
-        gateMsg.innerHTML = `<a href="auth.html?next=${encodeURIComponent(location.pathname + location.search)}" class="text-brand hover:underline">Sign in</a> to review. Only verified buyers may write a review.`;
-        gateMsg.className = 'text-sm text-ink-muted mb-6';
-      }
-      return;
-    }
-
-    if (!userHasBought()) {
-      if (submitBtn) submitBtn.disabled = true;
-      if (gateMsg) {
-        gateMsg.innerHTML = `Reviews are open to verified buyers only. If you own this work, <a href="support.html" class="text-brand hover:underline">contact us</a> to verify your purchase.`;
-        gateMsg.className = 'text-sm text-ink-muted mb-6';
-      }
-      return;
-    }
-
-    // Authed verified buyer — unlock the form
-    if (submitBtn) submitBtn.disabled = false;
-    if (gateMsg) {
-      gateMsg.textContent = 'You own this work — your review will be marked as Verified Buyer.';
-      gateMsg.className = 'text-[11px] uppercase tracking-lux text-brand mb-6';
-    }
-  }
-
   function bindForms() {
-    renderReviewFormGate();
-    Store.subscribe('user', renderReviewFormGate);
-
-    // Star rating
     Utils.qsa('.star').forEach(s => s.addEventListener('click', () => {
       userRating = Number(s.getAttribute('data-r'));
       Utils.qsa('.star').forEach(x => {
@@ -333,25 +309,20 @@
         setTimeout(() => location.href = 'auth.html?next=' + encodeURIComponent(location.pathname + location.search), 800);
         return;
       }
-      // Req 15: enforce verified-buyer gate on submit too
-      if (!userHasBought()) {
-        Utils.toast('Only verified buyers may review this work');
-        return;
-      }
       const fd = new FormData(e.target);
-      const author = (fd.get('display') || Store.User.get().name || 'Anonymous').toString().trim();
       const body = (fd.get('body') || '').toString().trim();
-      if (!body) { Utils.toast('Please share a few words'); return; }
+      if (body.length < 10) { Utils.toast('Please share at least 10 characters'); return; }
 
-      const result = await GALLERY.api.createReview(artwork.id, {
-        author, body, rating: userRating, verified: true,
-      });
-      if (!result.ok) { Utils.toast('Could not submit review'); return; }
-      Utils.toast('Review submitted — marked as Verified Buyer');
-      e.target.reset();
-      userRating = 0;
-      Utils.qsa('.star').forEach(x => { x.classList.remove('text-accent'); x.classList.add('text-line'); });
-      renderReviewList();
+      try {
+        await GALLERY.api.createReview(artwork.id, { rating: userRating, body }, 'eser');
+        Utils.toast('Review submitted');
+        e.target.reset();
+        userRating = 0;
+        Utils.qsa('.star').forEach(x => { x.classList.remove('text-accent'); x.classList.add('text-line'); });
+        renderReviewList();
+      } catch (err) {
+        Utils.toast(err.message || 'Could not submit review');
+      }
     });
   }
 })();

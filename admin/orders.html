@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orders — The Curated Gallery · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="../js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-nav="admin" data-active="orders" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+
+    <div class="mb-10">
+      <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">Sales Overview</p>
+      <h1 class="font-display text-5xl text-ink-strong">Orders</h1>
+      <p id="orders-counter" class="mt-3 text-sm text-ink-muted">—</p>
+    </div>
+
+    <div class="bg-surface border border-line overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-bg-soft text-[11px] uppercase tracking-lux text-ink-muted">
+          <tr>
+            <th class="text-left px-5 py-4">Order #</th>
+            <th class="text-left py-4">Customer</th>
+            <th class="text-left py-4">Items</th>
+            <th class="text-left py-4">Payment</th>
+            <th class="text-left py-4">Date</th>
+            <th class="text-right py-4">Total</th>
+            <th class="text-left py-4 pl-3">Status</th>
+            <th class="py-4"></th>
+          </tr>
+        </thead>
+        <tbody id="orders-tbody" class="divide-y divide-line text-ink-strong"></tbody>
+      </table>
+    </div>
+
+    <div id="orders-empty" class="hidden text-center bg-surface border border-line border-dashed py-20 px-6 mt-6">
+      <p class="font-display italic text-2xl text-ink-strong">No orders yet.</p>
+      <p class="mt-3 text-sm text-ink-muted">When customers place orders, they will appear here.</p>
+    </div>
+
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/components.js"></script>
+  <script src="../js/pages/admin/orders.js"></script>
+</body>
+</html>

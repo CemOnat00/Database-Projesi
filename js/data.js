@@ -1,489 +1,251 @@
 /* ============================================================
-   js/data.js — Mock data (eserler, atölyeler, yorumlar)
-   Tek veri kaynağı; tüm sayfalar buradan beslenir.
+   js/data.js — Backend ile konuşan veri katmanı (GALLERY.api.*)
+   • Tüm okuma/yazma operasyonları window.Api üzerinden gerçek
+     HTTP çağrılarına gider.
+   • Backend Türkçe field adları kullanır (baslik, fiyat…).
+     Bu dosyadaki map* fonksiyonları cevabı frontend'in kullandığı
+     İngilizce shape'e çevirir.
+   • Mock dataset YOK — backend çalışmıyorsa hata yakalanır,
+     sayfa kendi boş durumunu gösterir.
    ============================================================ */
 
 (function (global) {
   'use strict';
 
-  const ARTWORKS = [
-    {
-      id: 'midnight-resonance',
-      title: 'Midnight Resonance',
-      artist: 'David K. Chen',
-      artistBio: 'Born in Vancouver, working between Lisbon and Berlin. Chen\'s practice centres on the long, quiet conversation between artist and medium.',
-      price: 4200,
-      medium: 'Oil on Belgian linen',
-      mediumShort: 'Oil on Canvas',
-      year: 2024,
-      dimensions: '120 × 90 cm',
-      edition: 'Unique work · signed verso',
-      authenticity: 'Certificate included',
-      shipping: 'Worldwide · insured crating',
-      category: 'painting',
-      featured: true,
-      images: [
-        'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5',
-        'https://images.unsplash.com/photo-1549289524-06cf8837ace5',
-        'https://images.unsplash.com/photo-1547891654-e66ed7ebb968',
-        'https://images.unsplash.com/photo-1561214115-f2f134cc4912',
-      ],
-      description: 'A nocturnal study of light\'s quiet reverberation across linen — built in eighteen layers of slow-drying oil. Chen\'s hand is unhurried; the canvas breathes between each glaze.',
-      aspect: 'aspect-[4/5]',
-      stats: { likes: 312, views: 8412, reviewCount: 14 },
-    },
-    {
-      id: 'ochre-study',
-      title: 'Ochre Study No. 4',
-      artist: 'Elena Rostova',
-      artistBio: 'Painter celebrated for her tactile, light-bearing canvases.',
-      price: 3200,
-      medium: 'Oil on Canvas',
-      mediumShort: 'Oil on Canvas',
-      year: 2025,
-      dimensions: '90 × 110 cm',
-      edition: 'Unique work',
-      category: 'painting',
-      featured: true,
-      images: [
-        'https://images.unsplash.com/photo-1549289524-06cf8837ace5',
-        'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5',
-        'https://images.unsplash.com/photo-1513519245088-0e12902e5a38',
-      ],
-      description: 'Soft ochre over warm ground — a slow tonal exercise built up across twelve sittings, with the brush rests visible if you stand close.',
-      aspect: 'aspect-[4/5]',
-      stats: { likes: 281, views: 6940, reviewCount: 9 },
-    },
-    {
-      id: 'roots-of-antiquity',
-      title: 'Roots of Antiquity',
-      artist: 'Sophia Lin',
-      artistBio: 'Working on heavy paper with charcoal and graphite.',
-      price: 850,
-      medium: 'Charcoal on heavy paper',
-      mediumShort: 'Charcoal',
-      year: 2023,
-      dimensions: '50 × 70 cm',
-      edition: 'Unique work',
-      category: 'drawing',
-      images: [
-        'https://images.unsplash.com/photo-1577720580479-7d839d829c73',
-        'https://images.unsplash.com/photo-1547891654-e66ed7ebb968',
-      ],
-      description: 'Charcoal sketch of a twisted ancient olive tree on heavy textured paper. The branches are drawn with a single, unbroken hand — the page wears every hesitation.',
-      aspect: 'aspect-[4/5]',
-      stats: { likes: 255, views: 5238, reviewCount: 12 },
-      campaign: { type: 'sale', label: '15% Off — Spring Sale', pct: 15 },
-    },
-    {
-      id: 'mirage-protocol',
-      title: 'Mirage Protocol',
-      artist: 'Alex Mercer',
-      artistBio: 'Digital surrealist exploring the geometry of dreams.',
-      price: 1200,
-      medium: 'Digital print on archival paper',
-      mediumShort: 'Digital',
-      year: 2025,
-      dimensions: '60 × 60 cm',
-      edition: 'Edition of 12',
-      category: 'digital',
-      images: [
-        'https://images.unsplash.com/photo-1536924940846-227afb31e2a5',
-        'https://images.unsplash.com/photo-1502691876148-a84978e59af8',
-      ],
-      description: 'Vibrant surrealist digital artwork featuring floating geometric shapes in a desert landscape at dusk. Procedural color, printed on archival paper, signed and numbered by the artist.',
-      aspect: 'aspect-square',
-      stats: { likes: 228, views: 4891, reviewCount: 8 },
-      campaign: { type: 'new', label: 'New Arrival' },
-    },
-    {
-      id: 'oxidation-study',
-      title: 'Oxidation Study #1',
-      artist: 'Marcus Vance',
-      artistBio: 'Fine-art photographer working in macro and texture.',
-      price: 600,
-      medium: 'Archival pigment print',
-      mediumShort: 'Photography',
-      year: 2024,
-      dimensions: '40 × 40 cm',
-      edition: 'Edition of 25',
-      category: 'photography',
-      images: [
-        'https://images.unsplash.com/photo-1547891654-e66ed7ebb968',
-        'https://images.unsplash.com/photo-1578321272176-b7bbc0679853',
-      ],
-      description: 'Close-up macro photography of rusted metal, oxidised in salt air over a decade. The print preserves every flake of pigment; framed in raw white oak.',
-      aspect: 'aspect-square',
-      stats: { likes: 142, views: 3120, reviewCount: 5 },
-    },
-    {
-      id: 'convergence',
-      title: 'Convergence',
-      artist: 'Elena Rostova',
-      artistBio: 'Painter celebrated for her tactile, light-bearing canvases — moving between watercolor and oil with equal patience.',
-      price: 1100,
-      medium: 'Watercolor on paper',
-      mediumShort: 'Watercolor',
-      year: 2023,
-      dimensions: '40 × 50 cm',
-      category: 'painting',
-      sold: true,
-      images: [
-        'https://images.unsplash.com/photo-1578926375605-eaf7559b1458',
-        'https://images.unsplash.com/photo-1561214115-f2f134cc4912',
-      ],
-      description: 'Two overlapping translucent circles in soft grey and dusty pink — a minimalist watercolor exercise on the language of nearness without contact.',
-      aspect: 'aspect-[4/5]',
-      stats: { likes: 99, views: 2210, reviewCount: 4 },
-    },
-    {
-      id: 'electric-youth',
-      title: 'Electric Youth',
-      artist: 'Studio Kilo',
-      artistBio: 'A two-person silkscreen studio in Berlin, known for high-contrast palettes and heavy halftone patterns.',
-      price: 2500,
-      medium: 'Silkscreen on archival paper',
-      mediumShort: 'Print',
-      year: 2025,
-      dimensions: '70 × 100 cm',
-      edition: 'Edition of 30',
-      category: 'print',
-      images: [
-        'https://images.unsplash.com/photo-1513519245088-0e12902e5a38',
-        'https://images.unsplash.com/photo-1536924940846-227afb31e2a5',
-      ],
-      description: 'Bold pop-art inspired portrait using bright neon colors and heavy halftone patterns. Hand-pulled across six screens, signed and numbered in the lower margin.',
-      aspect: 'aspect-[4/5]',
-      stats: { likes: 191, views: 4012, reviewCount: 6 },
-      campaign: { type: 'sale', label: '10% Off — Studio Kilo Days', pct: 10 },
-    },
-    {
-      id: 'surface-tension',
-      title: 'Surface Tension',
-      artist: 'Nora Hale',
-      artistBio: 'A fine-art photographer who waits for stillness — long-exposure water and light studies shot in silver gelatin.',
-      price: 950,
-      medium: 'Silver gelatin print',
-      mediumShort: 'Photography',
-      year: 2024,
-      dimensions: '50 × 50 cm',
-      edition: 'Edition of 15',
-      category: 'photography',
-      images: [
-        'https://images.unsplash.com/photo-1561214115-f2f134cc4912',
-        'https://images.unsplash.com/photo-1547891654-e66ed7ebb968',
-      ],
-      description: 'Fine-art black and white photography of ripples on dark water reflecting minimal light — a long exposure printed in silver gelatin on baryta paper.',
-      aspect: 'aspect-square',
-      stats: { likes: 194, views: 4213, reviewCount: 7 },
-    },
-    {
-      id: 'structural-integrity-2',
-      title: 'Structural Integrity II',
-      artist: 'Lumia Studio',
-      artistBio: 'A small Helsinki-based sculpture studio working with brushed bronze, raw concrete and other industrial materials at a domestic scale.',
-      price: 1850,
-      medium: 'Brushed bronze and concrete',
-      mediumShort: 'Sculpture',
-      year: 2025,
-      dimensions: '40 × 30 × 30 cm',
-      category: 'sculpture',
-      images: [
-        'https://images.unsplash.com/photo-1578321272176-b7bbc0679853',
-        'https://images.unsplash.com/photo-1547891654-e66ed7ebb968',
-      ],
-      description: 'Modern geometric sculpture made of brushed bronze and raw concrete — a study of the meeting between industrial weight and gentle proportion.',
-      aspect: 'aspect-[3/4]',
-      stats: { likes: 121, views: 2840, reviewCount: 4 },
-    },
-    {
-      id: 'north-window',
-      title: 'North Window',
-      artist: 'Iliana Berg',
-      artistBio: 'Painter working from a converted printworks in Stockholm — quiet interiors, soft northern light, oil on linen.',
-      price: 3200,
-      medium: 'Oil on Canvas',
-      mediumShort: 'Oil on Canvas',
-      year: 2025,
-      dimensions: '80 × 100 cm',
-      category: 'painting',
-      images: [
-        'https://images.unsplash.com/photo-1549289524-06cf8837ace5',
-        'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5',
-      ],
-      description: 'Soft light through the studio\'s north-facing window — a quiet interior in oil on linen, painted across two winter mornings.',
-      aspect: 'aspect-[4/5]',
-      stats: { likes: 89, views: 1820, reviewCount: 3 },
-    },
-  ];
-
-  const WORKSHOPS = [
-    {
-      id: 'advanced-oil-textures',
-      title: 'Advanced Oil Textures',
-      instructor: 'Elena Rostova',
-      instructorBio: 'Painter celebrated for her tactile, light-bearing canvases. Has taught masterclasses at The Curated Gallery since 2019.',
-      category: 'Masterclass',
-      level: 'Masterclass',
-      mediumTag: 'Painting',
-      price: 450,
-      capacity: 8,
-      spotsLeft: 7,
-      duration: '6 hours',
-      location: 'The Atelier, 2nd Floor',
-      description: 'A six-hour atelier intensive on building luminous impasto surfaces. Working alongside Elena Rostova — a painter celebrated for her tactile, light-bearing canvases — you will explore palette knife technique, glazing rhythms, and the architecture of slow-drying mediums.',
-      summary: 'A six-hour intensive on impasto technique and luminous glazing layers, for experienced painters.',
-      image: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5',
-      images: [
-        'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5',
-        'https://images.unsplash.com/photo-1513519245088-0e12902e5a38',
-        'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5',
-      ],
-      featured: true,
-      sessions: [
-        { date: '2026-06-14', time: '10:00', label: 'Jun 14', dateLong: 'Saturday, June 14, 2026' },
-        { date: '2026-06-28', time: '10:00', label: 'Jun 28', dateLong: 'Saturday, June 28, 2026' },
-        { date: '2026-07-12', time: '10:00', label: 'Jul 12', dateLong: 'Saturday, July 12, 2026' },
-        { date: '2026-07-26', time: '10:00', label: 'Jul 26', dateLong: 'Saturday, July 26, 2026' },
-      ],
-      stats: { rating: 4.9, reviewCount: 38, occupancy: 0.94 },
-    },
-    {
-      id: 'form-and-clay',
-      title: 'Introduction to Form & Clay',
-      instructor: 'Hans Reiter',
-      instructorBio: 'Sculptor and ceramicist based in Hamburg. Teaches an unhurried, hands-on approach to material.',
-      category: 'Sculpture',
-      level: 'Beginner',
-      mediumTag: 'Sculpture',
-      price: 85,
-      capacity: 12,
-      spotsLeft: 9,
-      duration: '3 hours',
-      location: 'Studio B',
-      description: 'A relaxed evening introduction to hand-building with clay. No prior experience required.',
-      summary: 'Hand-building with clay — relaxed, no experience required.',
-      image: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261',
-      images: [
-        'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261',
-        'https://images.unsplash.com/photo-1547891654-e66ed7ebb968',
-      ],
-      sessions: [
-        { date: '2026-11-05', time: '18:00', label: 'Nov 5', dateLong: 'Thursday, November 5, 2026' },
-      ],
-      stats: { rating: 4.7, reviewCount: 32, occupancy: 0.85 },
-      campaign: { type: 'new', label: 'New This Season' },
-    },
-    {
-      id: 'generative-art-code',
-      title: 'Generative Art & Code',
-      instructor: 'Mira Tan',
-      instructorBio: 'Generative artist and creative technologist. Works at the seam between sketch and system.',
-      category: 'Digital Art',
-      level: 'Intermediate',
-      mediumTag: 'Digital',
-      price: 120,
-      capacity: 10,
-      spotsLeft: 0,
-      duration: '4 hours',
-      location: 'Studio C',
-      description: 'An afternoon of generative composition using p5.js and procedural color systems.',
-      summary: 'p5.js, procedural color, generative composition.',
-      image: 'https://images.unsplash.com/photo-1502691876148-a84978e59af8',
-      images: [
-        'https://images.unsplash.com/photo-1502691876148-a84978e59af8',
-        'https://images.unsplash.com/photo-1536924940846-227afb31e2a5',
-      ],
-      waitlist: true,
-      sessions: [
-        { date: '2026-11-12', time: '14:00', label: 'Nov 12', dateLong: 'Thursday, November 12, 2026' },
-      ],
-      stats: { rating: 4.5, reviewCount: 22, occupancy: 1.0 },
-    },
-    {
-      id: 'botanical-watercolors',
-      title: 'Botanical Watercolors',
-      instructor: 'Aiko Murata',
-      instructorBio: 'Watercolorist working in Kyoto. Brings a patient, observational approach to florals.',
-      category: 'Painting',
-      level: 'Beginner',
-      mediumTag: 'Painting',
-      price: 95,
-      capacity: 8,
-      spotsLeft: 5,
-      duration: '4 hours',
-      location: 'The Atelier',
-      description: 'A morning session on watercolor florals — quiet observation and patient layering.',
-      summary: 'Watercolor florals — quiet observation, patient layering.',
-      image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38',
-      images: [
-        'https://images.unsplash.com/photo-1513519245088-0e12902e5a38',
-        'https://images.unsplash.com/photo-1577720580479-7d839d829c73',
-      ],
-      sessions: [
-        { date: '2026-11-18', time: '10:00', label: 'Nov 18', dateLong: 'Wednesday, November 18, 2026' },
-      ],
-      stats: { rating: 4.7, reviewCount: 32, occupancy: 0.88 },
-      campaign: { type: 'sale', label: '20% Off — Spring Programme', pct: 20 },
-    },
-    {
-      id: 'curatorial-walk',
-      title: 'Silence & Space — Curatorial Walk',
-      instructor: 'Lina Verge',
-      instructorBio: 'Curator of The Curated Gallery since 2014.',
-      category: 'Exhibition',
-      level: 'All Levels',
-      mediumTag: 'Talk',
-      price: 0,
-      capacity: 20,
-      spotsLeft: 12,
-      duration: '1 hour',
-      location: 'Main Gallery',
-      description: 'A curator-led walking conversation through the current exhibition — slow looking, anchored by three central works.',
-      summary: 'A curator-led walking conversation through the current exhibition.',
-      image: 'https://images.unsplash.com/photo-1578321272176-b7bbc0679853',
-      images: [
-        'https://images.unsplash.com/photo-1578321272176-b7bbc0679853',
-        'https://images.unsplash.com/photo-1561214115-f2f134cc4912',
-      ],
-      complimentary: true,
-      sessions: [
-        { date: '2026-12-01', time: '17:00', label: 'Dec 1', dateLong: 'Tuesday, December 1, 2026' },
-      ],
-      stats: { rating: 4.8, reviewCount: 18, occupancy: 0.62 },
-    },
-  ];
-
-  const REVIEWS = {
-    'midnight-resonance': [
-      { author: 'Cordelia Marsh', date: 'February 2026', rating: 5, body: "Hangs above the hallway console — it changes hour by hour with the light. Crating and delivery were museum-grade.", verified: true, helpful: 24, reply: 'Thank you, Cordelia. We will pass on your kind words to David personally.' },
-      { author: 'Anders Holm', date: 'January 2026', rating: 4, body: "Quiet and patient work. My one wish: a longer condition report — though staff were attentive over email when I asked.", verified: true, helpful: 9, reply: 'Noted — we have introduced extended condition reports for collectors as of March.' },
-    ],
-    'advanced-oil-textures': [
-      { author: 'Margaux Hensley', date: 'Attended · March 2026', rating: 5, body: "Elena's eye for layered light changed how I prepare a canvas. The pacing was unhurried and the atelier itself feels like a quiet cathedral.", verified: true, helpful: 31, reply: 'Thank you, Margaux — Elena is preparing a follow-up on cold-wax mediums this autumn. We will save a seat for you.' },
-      { author: 'Iliana Berg', date: 'Attended · February 2026', rating: 4, body: "A generous teacher. I left with three studies and a much steadier hand — the only note: I wished the day were two hours longer.", verified: true, helpful: 18, reply: 'Heard, with thanks. Our upcoming weekend intensive runs across two days — invitations go out to past attendees first.' },
-      { author: 'Daniel Okafor', date: 'Attended · January 2026', rating: 5, body: "The materials provided were exceptional — Williamsburg oils, fine-weave linen. You feel the gallery\'s standards in every detail.", verified: true, helpful: 14, reply: 'Thank you, Daniel. We source linen from a small atelier in Belgium — we are glad it carried through.' },
-      { author: 'Sébastien Roux', date: 'Attended · December 2025', rating: 5, body: "A patient, exact masterclass. Elena\'s demonstration of glazing rhythms alone was worth the journey from Lyon.", verified: true, helpful: 11, reply: 'Until next time, Sébastien — we are reserving the corner easel by the north window for your return.' },
-    ],
-  };
-
-  const ORDERS = [
-    {
-      id: 'TCG-2026-0419',
-      date: '2026-05-17',
-      status: 'Preparing',
-      items: [
-        { type: 'artwork', refId: 'midnight-resonance', title: 'Midnight Resonance', artist: 'David K. Chen', qty: 1, price: 4200 },
-        { type: 'workshop', refId: 'advanced-oil-textures', title: 'Advanced Oil Textures Masterclass', artist: 'Reservation · Jun 14, 2026 · 2 participants', qty: 1, price: 900 },
-      ],
-      subtotal: 5100, shipping: 120, discount: 0, tax: 918, total: 6138,
-    },
-    {
-      id: 'TCG-2026-0312',
-      date: '2026-03-22',
-      status: 'Delivered',
-      items: [{ type: 'artwork', refId: 'mirage-protocol', title: 'Mirage Protocol', artist: 'Alex Mercer', qty: 1, price: 1200 }],
-      subtotal: 1200, shipping: 0, discount: 0, tax: 216, total: 1416,
-    },
-    {
-      id: 'TCG-2025-1108',
-      date: '2025-11-14',
-      status: 'Delivered',
-      items: [
-        { type: 'artwork', refId: 'roots-of-antiquity', title: 'Roots of Antiquity', artist: 'Sophia Lin', qty: 1, price: 850 },
-        { type: 'artwork', refId: 'oxidation-study', title: 'Oxidation Study #1', artist: 'Marcus Vance', qty: 1, price: 600 },
-        { type: 'workshop', refId: 'botanical-watercolors', title: 'Botanical Watercolors', artist: 'Reservation · Nov 18, 2025', qty: 1, price: 95 },
-      ],
-      subtotal: 1545, shipping: 120, discount: 154, tax: 272, total: 1783,
-    },
-  ];
-
-  const SUPPORT_TICKETS = [
-    { id: 3812, subject: 'Condition report for Midnight Resonance', date: 'Today', status: 'Open' },
-    { id: 3754, subject: 'Workshop rescheduling — Jun 14', date: 'Mar 30, 2026', status: 'Resolved' },
-    { id: 3621, subject: 'Authentication certificate request', date: 'Mar 14, 2026', status: 'Resolved' },
-  ];
-
+  /* ---- Frontend-only sabitler ----------------------------- */
   const COUPONS = { CURATED10: 10, FIRSTBRUSH: 15, ATELIER20: 20 };
-
-  // ---- User-specific offers --------------------------------------
-  // Backend: SELECT code, description, scope FROM offers WHERE user_email=? OR scope='public'
-  const OFFERS = {
-    // Public — available to everyone
-    public: [
-      { code: 'CURATED10', label: '10% off your first purchase',     description: 'Use at checkout. One-time application.', scope: 'public' },
-      { code: 'FIRSTBRUSH', label: '15% off any workshop',            description: 'Newcomer offer for atelier sessions.',  scope: 'workshops' },
-    ],
-    // Per-user — keyed by email (lowercase)
-    'cem@example.com': [
-      { code: 'ATELIER20',  label: '20% off — loyalty offer',         description: 'Thank-you for collecting with us. Use on any reservation or artwork.', scope: 'all' },
-    ],
+  const SITE = (global.GALLERY && global.GALLERY.SITE) || {
+    shippingFee: 120,
+    taxRate: 0.18,
+    cancellationWindowHours: 48,
   };
 
-  /* ---- Helper lookups ---------------------------------------- */
-  function getArtwork(id) { return ARTWORKS.find(a => a.id === id) || ARTWORKS[0]; }
-  function getWorkshop(id) { return WORKSHOPS.find(w => w.id === id) || WORKSHOPS[0]; }
-  function getReviews(targetId) { return REVIEWS[targetId] || []; }
-  function getOrder(id) { return ORDERS.find(o => o.id === id) || ORDERS[0]; }
+  /* ---- Mapper'lar: backend → frontend shape ---------------- */
 
-  /* ---- Live chat auto-reply (frontend simulation) ------------ */
-  function pickAutoReply(text) {
-    const q = (text || '').toLowerCase();
-    if (/refund|return|geri|iade/.test(q)) return 'Returns are accepted within 14 days, insured both ways. Send your order number and we will arrange collection.';
-    if (/ship|delivery|kargo/.test(q))      return 'All works ship insured, hand-crated. Standard delivery is 14–21 days, with daily tracking once dispatched.';
-    if (/workshop|atölye/.test(q))           return 'Our workshops cover painting, sculpture and generative art. You can cancel up to 48 hours before the session for a full refund.';
-    if (/discount|coupon|kupon|indirim/.test(q)) return 'Try the codes CURATED10, FIRSTBRUSH or ATELIER20 at checkout. One code per order.';
-    return 'Thank you for writing. A curator will follow up here within a few minutes — usually faster between 11:00 and 18:00 GMT+3.';
+  function mapEser(e) {
+    if (!e) return null;
+    const stockSold = (e.stok_adedi != null && e.stok_adedi <= 0);
+    const year = e.eklenme_tarihi ? new Date(e.eklenme_tarihi).getFullYear() : new Date().getFullYear();
+    const cat = (e.kategori || '').toLowerCase();
+    return {
+      id: e.id,
+      title: e.baslik || '',
+      description: e.aciklama || '',
+      artist: (e.sanatci && e.sanatci.ad_soyad) || 'Unknown',
+      artistId: (e.sanatci && e.sanatci.id) || null,
+      artistBio: (e.sanatci && e.sanatci.biyografi) || '',
+      price: Number(e.fiyat || 0),
+      stock: e.stok_adedi,
+      sold: stockSold,
+      image: e.gorsel_url || '',
+      images: e.gorsel_url ? [e.gorsel_url] : [],
+      category: cat,
+      medium: e.kategori || '',
+      mediumShort: e.kategori || '',
+      year,
+      dimensions: '—',
+      edition: '—',
+      authenticity: 'Certificate included',
+      shipping: 'Worldwide · insured',
+      aspect: 'aspect-[4/5]',
+      stats: e.stats || { likes: 0, views: 0, reviewCount: 0 },
+      campaign: e.kampanya || null,
+      _raw: e,
+    };
   }
 
-  /* ---- API layer (backend-ready) ----------------------------
-     Şu an in-memory. Backend bağlandığında her fonksiyonun gövdesi
-     `fetch(...)` çağrısına çevrilir — sayfa JS'leri değişmez.
-     -------------------------------------------------------------- */
-  function delay(ms) { return new Promise(r => setTimeout(r, ms || 0)); }
+  function mapEtkinlik(w) {
+    if (!w) return null;
+    const dateISO = (w.etkinlik_tarihi || '').slice(0, 10);
+    const dateObj = w.etkinlik_tarihi ? new Date(w.etkinlik_tarihi) : null;
+    const dateLong = dateObj
+      ? dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : 'Date TBA';
+    const label = dateObj
+      ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : '';
+    const time = w.baslangic_saati ? String(w.baslangic_saati).slice(0, 5) : '';
+    const free = Number(w.ucret || 0) === 0;
+    return {
+      id: w.id,
+      title: w.baslik || '',
+      description: w.aciklama || '',
+      summary: (w.aciklama || '').slice(0, 140),
+      instructor: w.egitmen || 'The Atelier',
+      instructorBio: w.egitmen_bio || '',
+      category: 'Workshop',
+      level: 'All Levels',
+      mediumTag: 'workshop',
+      price: Number(w.ucret || 0),
+      capacity: w.kontenjan || 0,
+      spotsLeft: w.kalan_kontenjan != null ? w.kalan_kontenjan : (w.kontenjan || 0),
+      duration: w.sure || '—',
+      location: w.lokasyon || 'The Atelier',
+      image: w.gorsel_url || '',
+      images: w.gorsel_url ? [w.gorsel_url] : [],
+      sessions: dateObj ? [{ date: dateISO, time, label, dateLong }] : [],
+      complimentary: free,
+      stats: w.stats || { rating: 0, reviewCount: 0, occupancy: 0 },
+      campaign: w.kampanya || null,
+      _raw: w,
+    };
+  }
+
+  function mapYorum(y) {
+    if (!y) return null;
+    const dt = y.olusturma_tarihi ? new Date(y.olusturma_tarihi) : null;
+    return {
+      id: y.id,
+      author: (y.kullanici && y.kullanici.ad_soyad) || 'Anonymous',
+      authorId: (y.kullanici && y.kullanici.id) || null,
+      date: dt ? dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '',
+      dateISO: y.olusturma_tarihi,
+      rating: y.puan || 0,
+      body: y.metin || '',
+      helpful: y.faydali_oy_sayisi || 0,
+      verified: !!y.dogrulanmis_mi,
+      reply: y.yanitlar && y.yanitlar.length ? y.yanitlar[0].yanit_metni : null,
+      _raw: y,
+    };
+  }
+
+  function mapRezervasyon(r) {
+    if (!r) return null;
+    const w = mapEtkinlik(r.etkinlik) || {};
+    return {
+      id: r.id,
+      workshopId: r.etkinlik_id || (r.etkinlik && r.etkinlik.id) || null,
+      workshopTitle: w.title || '',
+      instructor: w.instructor || '',
+      sessionDate: w.sessions && w.sessions[0] ? w.sessions[0].date : null,
+      sessionLabel: w.sessions && w.sessions[0] ? w.sessions[0].dateLong : '',
+      sessionTime: w.sessions && w.sessions[0] ? w.sessions[0].time : '',
+      participants: r.katilimci_sayisi || 1,
+      status: capStatus(r.durum),
+      total: w.price ? Number(w.price) * (r.katilimci_sayisi || 1) : 0,
+      createdAt: r.olusturma_tarihi,
+      customer: r.kullanici ? {
+        id: r.kullanici.id,
+        name: r.kullanici.ad_soyad,
+        email: r.kullanici.email,
+      } : null,
+      _workshop: w,
+      _raw: r,
+    };
+  }
+
+  function mapSiparis(s) {
+    if (!s) return null;
+    return {
+      id: s.id,
+      total: Number(s.toplam_tutar || 0),
+      paymentMethod: s.odeme_yontemi || '',
+      status: capStatus(s.durum),
+      date: s.olusturma_tarihi ? new Date(s.olusturma_tarihi).toLocaleDateString('en-US') : '',
+      customer: s.kullanici ? {
+        id: s.kullanici.id,
+        name: s.kullanici.ad_soyad,
+        email: s.kullanici.email,
+      } : null,
+      items: (s.detaylar || []).map(d => ({
+        type: 'artwork',
+        refId: d.eser_id,
+        title: (d.eser && d.eser.baslik) || ('Artwork #' + d.eser_id),
+        artist: (d.eser && d.eser.sanatci && d.eser.sanatci.ad_soyad) || '',
+        image: (d.eser && d.eser.gorsel_url) || '',
+        price: Number(d.birim_fiyat || 0),
+        qty: 1,
+      })),
+      _raw: s,
+    };
+  }
+
+  function mapFavori(f) {
+    if (!f) return null;
+    const e = mapEser(f.eser) || { id: f.eser_id };
+    e._favoriteSince = f.eklenme_tarihi;
+    return e;
+  }
+
+  function mapDestek(t) {
+    if (!t) return null;
+    return {
+      id: t.id,
+      subject: t.konu || '',
+      message: t.mesaj || '',
+      status: capStatus(t.durum),
+      date: t.olusturma_tarihi ? new Date(t.olusturma_tarihi).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+      _raw: t,
+    };
+  }
+
+  function mapDestekMesaj(m) {
+    if (!m) return null;
+    return {
+      id: m.id,
+      text: m.mesaj || '',
+      from: (m.gonderen_tipi === 'admin' || m.gonderen_tipi === 'yonetici') ? 'curator' : 'user',
+      at: m.olusturma_tarihi,
+      _raw: m,
+    };
+  }
+
+  function capStatus(s) {
+    if (!s) return '—';
+    const map = {
+      'beklemede': 'Pending',
+      'onaylandi': 'Confirmed',
+      'tamamlandi': 'Completed',
+      'iptal': 'Cancelled',
+      'iptal_edildi': 'Cancelled',
+      'acik': 'Open',
+      'cevaplandi': 'Resolved',
+      'kapali': 'Resolved',
+    };
+    return map[s] || s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  /* ============================================================
+     API katmanı — sayfa modüllerinin kullandığı public yüzey
+     ============================================================ */
 
   const api = {
-    // Artworks
+    /* ---- Artworks (eserler) ---- */
     async listArtworks(params) {
-      // TODO(backend): return fetch('/api/artworks?' + qs).then(r => r.json());
-      await delay(0);
-      let arr = ARTWORKS.slice();
-      if (params?.category) arr = arr.filter(a => a.category === params.category);
-      if (params?.q) {
+      const data = await global.Api.get('/eserler');
+      const arr = (data && data.eserler) || [];
+      let mapped = arr.map(mapEser);
+      if (params && params.category) mapped = mapped.filter(a => a.category === params.category);
+      if (params && params.q) {
         const q = params.q.toLowerCase();
-        arr = arr.filter(a =>
+        mapped = mapped.filter(a =>
           a.title.toLowerCase().includes(q) ||
           a.artist.toLowerCase().includes(q) ||
-          (a.mediumShort || '').toLowerCase().includes(q));
+          a.mediumShort.toLowerCase().includes(q));
       }
-      return arr;
+      return mapped;
     },
     async getArtwork(id) {
-      // TODO(backend): return fetch(`/api/artworks/${id}`).then(r => r.json());
-      await delay(0);
-      return ARTWORKS.find(a => a.id === id) || null;
+      const data = await global.Api.get('/eserler/' + encodeURIComponent(id));
+      return mapEser(data);
     },
 
-    // Workshops
+    /* ---- Workshops (etkinlikler) ---- */
     async listWorkshops(params) {
-      // TODO(backend): return fetch('/api/workshops?' + qs).then(r => r.json());
-      await delay(0);
-      let arr = WORKSHOPS.slice();
-      if (params?.medium && params.medium !== 'all') {
-        arr = arr.filter(w => (w.mediumTag || '').toLowerCase() === params.medium);
+      const data = await global.Api.get('/etkinlikler');
+      const arr = (data && data.etkinlikler) || [];
+      let mapped = arr.map(mapEtkinlik);
+      if (params && params.medium && params.medium !== 'all') {
+        mapped = mapped.filter(w => (w.mediumTag || '').toLowerCase() === params.medium);
       }
-      if (params?.level && params.level !== 'all') {
-        arr = arr.filter(w => (w.level || '').toLowerCase() === params.level);
-      }
-      if (params?.dateRange && params.dateRange !== 'all') {
+      if (params && params.dateRange && params.dateRange !== 'all') {
         const now = new Date();
         const thisMonth = now.getMonth();
         const thisYear = now.getFullYear();
-        arr = arr.filter(w => (w.sessions || []).some(s => {
+        mapped = mapped.filter(w => (w.sessions || []).some(s => {
+          if (!s.date) return false;
           const d = new Date(s.date);
-          if (params.dateRange === 'thismonth') {
-            return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-          }
+          if (params.dateRange === 'thismonth') return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
           if (params.dateRange === 'nextmonth') {
             const next = new Date(thisYear, thisMonth + 1, 1);
             return d.getMonth() === next.getMonth() && d.getFullYear() === next.getFullYear();
@@ -491,407 +253,372 @@
           return true;
         }));
       }
-      return arr;
+      return mapped;
     },
     async getWorkshop(id) {
-      // TODO(backend): return fetch(`/api/workshops/${id}`).then(r => r.json());
-      await delay(0);
-      return WORKSHOPS.find(w => w.id === id) || null;
+      const data = await global.Api.get('/etkinlikler/' + encodeURIComponent(id));
+      return mapEtkinlik(data);
     },
 
-    // Reservation (write op)
-    async createReservation(payload) {
-      // TODO(backend): return fetch('/api/reservations', { method: 'POST', body: JSON.stringify(payload) })
-      await delay(0);
-      const w = WORKSHOPS.find(x => x.id === payload.workshopId);
-      if (!w) return { ok: false, error: 'workshop_not_found' };
-
-      // Validate session date is in the future
-      if (payload.sessionDate) {
-        const sessionDay = new Date(payload.sessionDate);
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        if (sessionDay < today) return { ok: false, error: 'session_past' };
-      }
-
-      const participants = payload.participants || 1;
-      if (!w.complimentary && w.spotsLeft < participants) return { ok: false, error: 'no_capacity' };
-      if (!w.complimentary) w.spotsLeft -= participants;
-      return { ok: true, reservationId: 'R' + Date.now() };
-    },
-
+    /* ---- Reservations ---- */
     async listReservations() {
-      // TODO(backend): return fetch('/api/reservations').then(r => r.json());
-      await delay(0);
-      return window.Store.Reservations.list();
+      const data = await global.Api.get('/rezervasyonlar');
+      const arr = Array.isArray(data) ? data : (data && data.rezervasyonlar) || [];
+      return arr.map(mapRezervasyon);
     },
-
+    async createReservation(payload) {
+      const body = {
+        etkinlik_id: Number(payload.workshopId || payload.etkinlik_id),
+        katilimci_sayisi: Number(payload.participants || 1),
+      };
+      const data = await global.Api.post('/rezervasyonlar', body);
+      return { ok: true, reservationId: data && data.id, reservation: mapRezervasyon(data) };
+    },
     async updateReservation(reservationId, patch) {
-      // TODO(backend): return fetch(`/api/reservations/${reservationId}`, { method: 'PATCH', body: JSON.stringify(patch) })
-      await delay(0);
-      const reservation = window.Store.Reservations.list().find(r => r.id === reservationId);
-      if (!reservation) return { ok: false, error: 'not_found' };
-
-      const workshop = WORKSHOPS.find(w => w.id === reservation.workshopId);
-      if (!workshop) return { ok: false, error: 'workshop_not_found' };
-
-      // 48-hour cancellation/edit window (only enforced if we have ISO date)
-      if (reservation.sessionDate) {
-        const sessionStart = new Date(reservation.sessionDate);
-        const hoursUntil = (sessionStart - new Date()) / 36e5;
-        const limitHours = (global.GALLERY && global.GALLERY.SITE && global.GALLERY.SITE.cancellationWindowHours) || 48;
-        if (hoursUntil < limitHours) return { ok: false, error: 'window_closed' };
-      }
-
-      const apply = {};
-
-      // ---- Date update ---------------------------------------
-      if (patch.sessionDate) {
-        const newSession = (workshop.sessions || []).find(s => s.date === patch.sessionDate);
-        if (!newSession) return { ok: false, error: 'session_not_found' };
-        const newDay = new Date(newSession.date); newDay.setHours(0, 0, 0, 0);
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        if (newDay < today) return { ok: false, error: 'session_past' };
-        apply.sessionDate  = newSession.date;
-        apply.sessionLabel = newSession.dateLong;
-        apply.sessionTime  = newSession.time;
-        // Same workshop: spotsLeft unchanged because seats just shift sessions
-      }
-
-      // ---- Participants update -------------------------------
-      if (patch.participants != null) {
-        const delta = Number(patch.participants) - reservation.participants;
-        if (!workshop.complimentary) {
-          if (delta > 0 && workshop.spotsLeft < delta) return { ok: false, error: 'no_capacity' };
-          workshop.spotsLeft -= delta;
-        }
-        apply.participants = Number(patch.participants);
-        // Recompute total
-        const unit = workshop.price || 0;
-        apply.total = unit * apply.participants - Math.round(unit * apply.participants * (reservation.discountPct || 0) / 100);
-      }
-
-      window.Store.Reservations.update(reservationId, apply);
-      return { ok: true, reservation: window.Store.Reservations.list().find(r => r.id === reservationId) };
+      const body = {};
+      if (patch.participants != null) body.katilimci_sayisi = Number(patch.participants);
+      if (patch.status) body.durum = patch.status.toLowerCase();
+      const data = await global.Api.put('/rezervasyonlar/' + reservationId, body);
+      return { ok: true, reservation: mapRezervasyon(data) };
     },
-
     async cancelReservation(reservationId) {
-      // TODO(backend): return fetch(`/api/reservations/${reservationId}`, { method: 'DELETE' })
-      await delay(0);
-      const reservation = window.Store.Reservations.list().find(r => r.id === reservationId);
-      if (!reservation) return { ok: false, error: 'not_found' };
-
-      if (reservation.sessionDate) {
-        const sessionStart = new Date(reservation.sessionDate);
-        const hoursUntil = (sessionStart - new Date()) / 36e5;
-        const limitHours = (global.GALLERY && global.GALLERY.SITE && global.GALLERY.SITE.cancellationWindowHours) || 48;
-        if (hoursUntil < limitHours) return { ok: false, error: 'window_closed' };
-      }
-
-      const workshop = WORKSHOPS.find(w => w.id === reservation.workshopId);
-      if (workshop && !workshop.complimentary) {
-        workshop.spotsLeft += (reservation.participants || 1);
-      }
-
-      global.Store.Reservations.cancel(reservationId);
-      return { ok: true, refund: reservation.total || 0 };
+      await global.Api.del('/rezervasyonlar/' + reservationId);
+      return { ok: true, refund: 0 };
     },
 
-    async joinWaitlist(payload) {
-      // TODO(backend): return fetch('/api/waitlist', { method: 'POST', body: JSON.stringify(payload) })
-      await delay(0);
-      const w = WORKSHOPS.find(x => x.id === payload.workshopId);
-      if (!w) return { ok: false, error: 'workshop_not_found' };
-      if (window.Store.Waitlist.has(payload.workshopId, payload.email)) {
-        return { ok: false, error: 'already_on_waitlist' };
-      }
-      const entry = window.Store.Waitlist.add(payload);
-      return { ok: true, waitlistId: entry.id };
-    },
-
-    // Reviews
-    async listReviews(targetId, sort) {
-      // TODO(backend): return fetch(`/api/reviews?target=${targetId}&sort=${sort||'recent'}`).then(r => r.json());
-      await delay(0);
-      // Merge admin replies persisted in localStorage over the static seed data
-      const storedReplies = global.Store.ReviewReplies
-        ? (global.Store.ReviewReplies.map()[targetId] || {})
-        : {};
-      const arr = (REVIEWS[targetId] || []).slice().map((r, i) => {
-        const persisted = storedReplies[String(i)];
-        return persisted !== undefined ? Object.assign({}, r, { reply: persisted }) : r;
-      });
-      const key = sort || 'recent';
-      if (key === 'rating')   arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      else if (key === 'helpful') arr.sort((a, b) => (b.helpful || 0) - (a.helpful || 0));
-      // 'recent' is insertion order (unshift on create), no sort needed
-      return arr;
-    },
-    async createReview(targetId, payload) {
-      // TODO(backend): return fetch(`/api/reviews/${targetId}`, { method: 'POST', body: ... })
-      await delay(0);
-      if (!REVIEWS[targetId]) REVIEWS[targetId] = [];
-      const review = Object.assign(
-        { date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), helpful: 0, verified: false },
-        payload
-      );
-      REVIEWS[targetId].unshift(review);
-      return { ok: true, review };
-    },
-    async toggleReviewHelpful(targetId, reviewIndex) {
-      // TODO(backend): POST /api/reviews/:targetId/:index/helpful (toggles user's vote)
-      await delay(0);
-      const arr = REVIEWS[targetId];
-      if (!arr || !arr[reviewIndex]) return { ok: false, error: 'not_found' };
-      const key = `${targetId}:${reviewIndex}`;
-      const wasOn = global.Store.ReviewVotes.has(key);
-      global.Store.ReviewVotes.toggle(key);
-      arr[reviewIndex].helpful = Math.max(0, (arr[reviewIndex].helpful || 0) + (wasOn ? -1 : 1));
-      return { ok: true, helpful: arr[reviewIndex].helpful, on: !wasOn };
-    },
-    async replyToReview(targetId, reviewIndex, replyText) {
-      // TODO(backend): PATCH /api/reviews/:targetId/:index/reply
-      await delay(0);
-      const arr = REVIEWS[targetId];
-      if (!arr || arr[reviewIndex] === undefined) return { ok: false, error: 'not_found' };
-      arr[reviewIndex].reply = replyText;
-      if (global.Store.ReviewReplies) global.Store.ReviewReplies.set(targetId, reviewIndex, replyText);
-      return { ok: true };
-    },
-
-    // ---- Admin statistics --------------------------------------
-    async getAdminStats() {
-      // TODO(backend): return fetch('/api/admin/stats').then(r => r.json());
-      await delay(0);
-      const allReservations = global.Store.Reservations.listIncludingHistory
-        ? global.Store.Reservations.listIncludingHistory()
-        : global.Store.Reservations.list();
-
-      const artworkStats = ARTWORKS.map(a => ({
-        id: a.id,
-        title: a.title,
-        artist: a.artist,
-        likes: a.stats?.likes || 0,
-        views: a.stats?.views || 0,
-        reviewCount: (REVIEWS[a.id] || []).length || a.stats?.reviewCount || 0,
-      }));
-
-      const workshopStats = WORKSHOPS.map(w => {
-        const reviews = REVIEWS[w.id] || [];
-        const avg = reviews.length
-          ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-          : (w.stats?.rating || 0).toFixed(1);
-        const liveRes = allReservations.filter(r => r.workshopId === w.id).length;
-        const baseRes = Math.round((w.stats?.occupancy || 0) * (w.capacity || 10) * 6);
-        return {
-          id: w.id,
-          title: w.title,
-          instructor: w.instructor,
-          occupancy: w.stats?.occupancy || 0,
-          avgRating: avg,
-          reviewCount: reviews.length || w.stats?.reviewCount || 0,
-          totalReservations: liveRes + baseRes,
-        };
-      });
-
-      // Flatten all reviews with target metadata for admin management
-      const allReviews = [];
-      const storedReplies = global.Store.ReviewReplies ? global.Store.ReviewReplies.map() : {};
-      ARTWORKS.forEach(a => {
-        (REVIEWS[a.id] || []).forEach((r, idx) => {
-          const persisted = storedReplies[a.id] && storedReplies[a.id][String(idx)];
-          allReviews.push(Object.assign({}, r, {
-            reply: persisted !== undefined ? persisted : (r.reply || ''),
-            targetId: a.id, targetTitle: a.title, targetType: 'Artwork', reviewIndex: idx,
-          }));
-        });
-      });
-      WORKSHOPS.forEach(w => {
-        (REVIEWS[w.id] || []).forEach((r, idx) => {
-          const persisted = storedReplies[w.id] && storedReplies[w.id][String(idx)];
-          allReviews.push(Object.assign({}, r, {
-            reply: persisted !== undefined ? persisted : (r.reply || ''),
-            targetId: w.id, targetTitle: w.title, targetType: 'Workshop', reviewIndex: idx,
-          }));
-        });
-      });
-
-      return { artworkStats, workshopStats, allReviews };
-    },
-
-    // ---- Orders ------------------------------------------------
+    /* ---- Orders ---- */
     async listOrders() {
-      // TODO(backend): return fetch('/api/orders').then(r => r.json());
-      await delay(0);
-      // Merge user-placed orders with curated demo dataset
-      const live = global.Store.Orders.list();
-      return live.concat(ORDERS);
+      const data = await global.Api.get('/siparisler');
+      const arr = Array.isArray(data) ? data : (data && data.siparisler) || [];
+      return arr.map(mapSiparis);
     },
     async getOrder(id) {
-      // TODO(backend): return fetch(`/api/orders/${id}`).then(r => r.json());
-      await delay(0);
-      return global.Store.Orders.find(id) || ORDERS.find(o => o.id === id) || null;
+      const data = await global.Api.get('/siparisler/' + encodeURIComponent(id));
+      return mapSiparis(data);
     },
     async createOrder(order) {
-      // TODO(backend): return fetch('/api/orders', { method: 'POST', body: JSON.stringify(order) })
-      await delay(0);
-      const placed = Object.assign({
-        id: 'TCG-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000),
-        date: new Date().toISOString().split('T')[0],
-        status: 'Preparing',
-      }, order);
-      global.Store.Orders.add(placed);
-      return { ok: true, order: placed };
+      const body = {
+        eser_idler: (order.items || []).filter(i => i.type === 'artwork').map(i => Number(i.refId)),
+        odeme_yontemi: order.paymentMethod || 'card',
+        kupon_kodu: order.discountCode || '',
+      };
+      const data = await global.Api.post('/siparisler', body);
+      const mapped = mapSiparis(data);
+      return { ok: true, order: mapped };
     },
 
-    // ---- Auth --------------------------------------------------
+    /* ---- Auth ---- */
     async register(profile) {
-      // TODO(backend): POST /api/auth/register
-      await delay(0);
-      const email = (profile.email || '').toLowerCase();
-      if (!email || !profile.password) return { ok: false, error: 'missing_fields' };
-      if (global.Store.Users.find(email)) return { ok: false, error: 'email_taken' };
-      const user = global.Store.Users.add(profile);
-      global.Store.User.set({ name: user.name, email: user.email, phone: user.phone, address: user.address });
-      return { ok: true, user: { name: user.name, email: user.email } };
+      const data = await global.Api.post('/auth/kayit', {
+        ad_soyad: profile.name, email: profile.email, sifre: profile.password,
+      });
+      return { ok: true, token: data.token, kullanici: data.kullanici };
     },
     async login(credentials) {
-      // TODO(backend): POST /api/auth/login
-      await delay(0);
-      const email = (credentials.email || '').toLowerCase();
-      const user = global.Store.Users.find(email);
-      if (!user) return { ok: false, error: 'not_found' };
-      if (user.password !== credentials.password) return { ok: false, error: 'wrong_password' };
-      const session = { name: user.name, email: user.email, phone: user.phone, address: user.address };
-      global.Store.User.set(session);
-      return { ok: true, user: session };
+      const data = await global.Api.post('/auth/giris', {
+        email: credentials.email, sifre: credentials.password,
+      });
+      return { ok: true, token: data.token, kullanici: data.kullanici };
     },
     async logout() {
-      // TODO(backend): POST /api/auth/logout
-      await delay(0);
+      // Sunucu tarafında stateless JWT — sadece local temizle
       global.Store.User.clear();
       return { ok: true };
     },
+    async getProfile() {
+      const data = await global.Api.get('/profil');
+      return data; // {id, ad_soyad, email, rol, ...}
+    },
     async updateProfile(patch) {
-      // TODO(backend): PATCH /api/account/profile
-      await delay(0);
-      const session = global.Store.User.get();
-      if (!session) return { ok: false, error: 'not_authed' };
-      const next = Object.assign({}, session, patch);
-      global.Store.User.set(next);
-      global.Store.Users.update(session.email, patch);
-      return { ok: true, user: next };
+      const body = {};
+      if (patch.name) body.ad_soyad = patch.name;
+      const data = await global.Api.put('/profil', body);
+      return { ok: true, user: data };
     },
     async changePassword(currentPw, newPw) {
-      // TODO(backend): POST /api/account/change-password
-      await delay(0);
-      const session = global.Store.User.get();
-      if (!session) return { ok: false, error: 'not_authed' };
-      const user = global.Store.Users.find(session.email);
-      if (!user) return { ok: false, error: 'not_found' };
-      if (user.password !== currentPw) return { ok: false, error: 'wrong_password' };
-      if (!newPw || newPw.length < 8) return { ok: false, error: 'weak_password' };
-      global.Store.Users.update(session.email, { password: newPw });
+      try {
+        await global.Api.put('/profil/sifre', { eski_sifre: currentPw, yeni_sifre: newPw });
+        return { ok: true };
+      } catch (e) {
+        const msg = (e.message || '').toLowerCase();
+        if (msg.includes('eski') || msg.includes('mevcut')) return { ok: false, error: 'wrong_password' };
+        if (msg.includes('min') || (newPw || '').length < 6) return { ok: false, error: 'weak_password' };
+        return { ok: false, error: 'unknown' };
+      }
+    },
+
+    /* ---- Favorites ---- */
+    favorites: {
+      async list() {
+        const data = await global.Api.get('/favoriler');
+        const arr = Array.isArray(data) ? data : (data && data.favoriler) || [];
+        return arr.map(f => f.eser_id || (f.eser && f.eser.id) || f.id);
+      },
+      async listFull() {
+        const data = await global.Api.get('/favoriler');
+        const arr = Array.isArray(data) ? data : (data && data.favoriler) || [];
+        return arr.map(mapFavori);
+      },
+      async has(id) {
+        const ids = await api.favorites.list();
+        return ids.includes(Number(id));
+      },
+      async add(id) {
+        await global.Api.post('/favoriler', { eser_id: Number(id) });
+        global.Store.Favorites.add(String(id));
+        return { ok: true, added: true };
+      },
+      async remove(id) {
+        await global.Api.del('/favoriler/' + Number(id));
+        global.Store.Favorites.remove(String(id));
+        return { ok: true, removed: true };
+      },
+      async toggle(id) {
+        const has = await api.favorites.has(id);
+        if (has) {
+          await api.favorites.remove(id);
+          return { ok: true, on: false };
+        }
+        await api.favorites.add(id);
+        return { ok: true, on: true };
+      },
+    },
+
+    /* ---- Reviews ---- */
+    async listReviews(targetId, sort, kind) {
+      const siralama = ({ recent: 'en_yeni', rating: 'en_yuksek_puan', helpful: 'en_faydali' })[sort] || 'en_yeni';
+      const tip = kind || 'eser';
+      const data = await global.Api.get('/yorumlar/' + encodeURIComponent(targetId) +
+        '?tip=' + tip + '&siralama=' + siralama);
+      // data may be { ortalama_puan, toplam_yorum, yorumlar } or array
+      const arr = (data && data.yorumlar) || (Array.isArray(data) ? data : []);
+      const list = arr.map(mapYorum);
+      // expose meta on array
+      list.meta = {
+        average: (data && data.ortalama_puan) || 0,
+        total: (data && data.toplam_yorum) || list.length,
+      };
+      return list;
+    },
+    async createReview(targetId, payload, kind) {
+      const body = {
+        referans_id: Number(targetId),
+        referans_tipi: kind || 'eser',
+        puan: payload.rating,
+        metin: payload.body,
+      };
+      const data = await global.Api.post('/yorumlar', body);
+      return { ok: true, review: mapYorum(data) };
+    },
+    async toggleReviewHelpful(targetId, reviewIndex, reviewId) {
+      const id = reviewId;
+      if (id == null) return { ok: false };
+      await global.Api.post('/yorumlar/' + Number(id) + '/faydali');
+      const key = `${targetId}:${reviewIndex}`;
+      const on = global.Store.ReviewVotes.toggle(key);
+      return { ok: true, on };
+    },
+    async replyToReview(reviewId, text) {
+      // Admin yanıtı
+      await global.Api.post('/admin/yorumlar/' + Number(reviewId) + '/yanit', { yanit_metni: text });
       return { ok: true };
     },
 
-    // Favorites — şu an Store.Favorites localStorage'a yazıyor. Backend geldiğinde
-    // bu metotların gövdesi fetch çağrılarına çevrilir; sayfa kodu dokunulmaz.
-    favorites: {
-      async list() {
-        // TODO(backend): return fetch('/api/favorites').then(r => r.json());
-        await delay(0);
-        return window.Store.Favorites.list();
-      },
-      async has(id) {
-        // TODO(backend): return fetch(`/api/favorites/${id}`).then(r => r.json()).then(j => j.exists);
-        await delay(0);
-        return window.Store.Favorites.has(id);
-      },
-      async add(id) {
-        // TODO(backend): return fetch('/api/favorites', { method: 'POST', body: JSON.stringify({id}) })
-        await delay(0);
-        const added = window.Store.Favorites.add(id);
-        return { ok: true, added };
-      },
-      async remove(id) {
-        // TODO(backend): return fetch(`/api/favorites/${id}`, { method: 'DELETE' })
-        await delay(0);
-        const removed = window.Store.Favorites.remove(id);
-        return { ok: true, removed };
-      },
-      async toggle(id) {
-        // TODO(backend): single endpoint that returns new state
-        await delay(0);
-        const nowOn = window.Store.Favorites.toggle(id);
-        return { ok: true, on: nowOn };
-      },
-    },
-
-    // ---- Support & Live Chat (Req 10) -------------------------
+    /* ---- Support ---- */
     async listSupportTickets() {
-      // TODO(backend): return fetch('/api/support/tickets').then(r => r.json());
-      await delay(0);
-      // User-submitted tickets first, then the static demo set
-      return global.Store.SupportTickets.list().concat(SUPPORT_TICKETS);
+      const data = await global.Api.get('/destek');
+      const arr = Array.isArray(data) ? data : (data && data.talepler) || [];
+      return arr.map(mapDestek);
     },
     async submitSupportTicket(payload) {
-      // TODO(backend): POST /api/support/tickets
-      await delay(0);
-      if (!payload || !payload.email || !payload.subject || !payload.message) {
-        return { ok: false, error: 'missing_fields' };
-      }
-      const ticket = global.Store.SupportTickets.add(payload);
-      return { ok: true, ticket };
+      const body = {
+        konu: (payload.subject || payload.topic || 'General Inquiry').slice(0, 150),
+        mesaj: (payload.message || '').slice(0, 4000),
+      };
+      const data = await global.Api.post('/destek', body);
+      return { ok: true, ticket: mapDestek(data) };
     },
-    async listChatMessages() {
-      // TODO(backend): return fetch('/api/chat/messages').then(r => r.json());
-      await delay(0);
-      return global.Store.ChatMessages.list();
+    async listChatMessages(ticketId) {
+      if (!ticketId) return [];
+      const data = await global.Api.get('/destek/' + Number(ticketId) + '/mesaj');
+      const arr = Array.isArray(data) ? data : (data && data.mesajlar) || [];
+      return arr.map(mapDestekMesaj);
     },
-    async sendChatMessage(text) {
-      // TODO(backend): POST /api/chat/messages — pushes to server, replies via WebSocket
-      await delay(0);
-      if (!text || !text.trim()) return { ok: false, error: 'empty' };
-      const userMsg = global.Store.ChatMessages.add({ from: 'user', text: text.trim() });
-      // Simulate a brief auto-reply from the curator (frontend-only).
-      const reply = pickAutoReply(text);
-      setTimeout(() => global.Store.ChatMessages.add({ from: 'curator', text: reply }), 600);
-      return { ok: true, message: userMsg };
+    async sendChatMessage(text, ticketId) {
+      if (!ticketId) return { ok: false, error: 'no_ticket' };
+      const data = await global.Api.post('/destek/' + Number(ticketId) + '/mesaj', { mesaj: text });
+      return { ok: true, message: mapDestekMesaj(data) };
     },
 
-    // ---- Campaigns & Offers (Req 9) ---------------------------
+    /* ---- Comparisons ---- */
+    async saveComparison(kind, ids) {
+      const endpoint = kind === 'events' ? '/karsilastir/etkinlikler' : '/karsilastir/eserler';
+      const key = kind === 'events' ? 'etkinlik_idler' : 'eser_idler';
+      const body = { [key]: ids.map(Number), kaydet: true };
+      await global.Api.post(endpoint, body);
+      // Local de tutalım
+      global.Store.Comparisons.save('Comparison · ' + new Date().toLocaleDateString(), { type: kind, ids });
+      return { ok: true };
+    },
+
+    /* ---- Campaigns & Offers ---- */
     async listCampaignArtworks() {
-      // TODO(backend): return fetch('/api/campaign/artworks').then(r => r.json());
-      await delay(0);
-      return ARTWORKS.filter(a => a.campaign);
+      try {
+        const data = await global.Api.get('/kampanya/eserler');
+        const arr = Array.isArray(data) ? data : (data && data.eserler) || [];
+        return arr.map(mapEser);
+      } catch (_) { return []; }
     },
     async listCampaignWorkshops() {
-      // TODO(backend): return fetch('/api/campaign/workshops').then(r => r.json());
-      await delay(0);
-      return WORKSHOPS.filter(w => w.campaign);
+      // Backend'de yok — boş döndür
+      return [];
     },
     async listOffers(userEmail) {
-      // TODO(backend): return fetch(`/api/offers?email=${userEmail||''}`).then(r => r.json());
-      await delay(0);
-      const personal = userEmail ? (OFFERS[userEmail.toLowerCase()] || []) : [];
-      // De-duplicate by code; personal overrides public
-      const seen = new Set(personal.map(o => o.code));
-      const publicOffers = OFFERS.public.filter(o => !seen.has(o.code));
-      return personal.concat(publicOffers);
+      // Public + per-user
+      const out = [];
+      if (global.Api.isAuthed()) {
+        try {
+          const data = await global.Api.get('/firsatlar');
+          const arr = Array.isArray(data) ? data : (data && data.firsatlar) || [];
+          arr.forEach(o => out.push({
+            code: o.kupon_kodu,
+            label: (o.indirim_yuzdesi ? o.indirim_yuzdesi + '% off' : 'Special offer'),
+            description: o.gecerlilik_tarihi ? ('Valid until ' + o.gecerlilik_tarihi) : '',
+            scope: 'all',
+          }));
+        } catch (_) { /* ignore */ }
+      }
+      // Public statik kuponlar (frontend)
+      out.push({ code: 'CURATED10',  label: '10% off your first purchase', description: 'Use at checkout. One-time application.', scope: 'public' });
+      out.push({ code: 'FIRSTBRUSH', label: '15% off any workshop',         description: 'Newcomer offer for atelier sessions.',  scope: 'workshops' });
+      return out;
     },
 
-    // Coupons
+    /* ---- Coupons (frontend-only check) ---- */
     async validateCoupon(code) {
-      // TODO(backend): return fetch(`/api/coupons/${code}`).then(r => r.json());
-      await delay(0);
-      const pct = COUPONS[code.toUpperCase()];
-      return pct ? { ok: true, code: code.toUpperCase(), pct } : { ok: false };
+      const c = (code || '').toUpperCase();
+      const pct = COUPONS[c];
+      return pct ? { ok: true, code: c, pct } : { ok: false };
+    },
+
+    /* ---- Stats ---- */
+    async getArtworkStats(id) {
+      try { return await global.Api.get('/istatistik/eser/' + Number(id)); }
+      catch (_) { return null; }
+    },
+    async getWorkshopStats(id) {
+      try { return await global.Api.get('/istatistik/etkinlik/' + Number(id)); }
+      catch (_) { return null; }
+    },
+    async getAdminReport() {
+      return await global.Api.get('/admin/rapor');
+    },
+
+    /* ============================================================
+       Admin CRUD (DEMO MODE — backend yarın bağlanacak)
+       Şu an her metot console'a log atar, toast döndürür.
+       Backend hazır olunca her metodun gövdesindeki TODO satırı
+       açılır, demo bölümü silinir.
+       ============================================================ */
+    adminEser: {
+      async olustur(payload) {
+        return await global.Api.post('/admin/eserler', payload);
+      },
+      async guncelle(id, patch) {
+        return await global.Api.put('/admin/eserler/' + id, patch);
+      },
+      async sil(id) {
+        return await global.Api.del('/admin/eserler/' + id);
+      },
+    },
+
+    adminEtkinlik: {
+      async olustur(payload) {
+        return await global.Api.post('/admin/etkinlikler', payload);
+      },
+      async guncelle(id, patch) {
+        return await global.Api.put('/admin/etkinlikler/' + id, patch);
+      },
+      async sil(id) {
+        return await global.Api.del('/admin/etkinlikler/' + id);
+      },
+    },
+
+    adminSanatci: {
+      async listele() {
+        // Sanatçılar public — gerçek backend var
+        try {
+          const data = await global.Api.get('/sanatcilar');
+          const arr = (data && data.sanatcilar) || (Array.isArray(data) ? data : []);
+          return arr.map(s => ({
+            id: s.id, name: s.ad_soyad, biography: s.biyografi || '', _raw: s,
+          }));
+        } catch (_) { return []; }
+      },
+      async detay(id) {
+        try {
+          const s = await global.Api.get('/sanatcilar/' + id);
+          return { id: s.id, name: s.ad_soyad, biography: s.biyografi || '', _raw: s };
+        } catch (_) { return null; }
+      },
+      async olustur(payload) {
+        return await global.Api.post('/admin/sanatcilar', payload);
+      },
+      async guncelle(id, patch) {
+        return await global.Api.put('/admin/sanatcilar/' + id, patch);
+      },
+      async sil(id) {
+        return await global.Api.del('/admin/sanatcilar/' + id);
+      },
+    },
+
+    adminListele: {
+      async siparisler() {
+        const data = await global.Api.get('/admin/siparisler');
+        const arr = Array.isArray(data) ? data : (data && data.siparisler) || [];
+        return arr.map(mapSiparis);
+      },
+      async rezervasyonlar() {
+        const data = await global.Api.get('/admin/rezervasyonlar');
+        const arr = Array.isArray(data) ? data : (data && data.rezervasyonlar) || [];
+        return arr.map(mapRezervasyon);
+      },
+      async destekTalepleri() {
+        const data = await global.Api.get('/admin/destek');
+        const arr = Array.isArray(data) ? data : (data && data.talepler) || [];
+        return arr.map(mapDestek);
+      },
+      async kullanicilar() {
+        const data = await global.Api.get('/admin/kullanicilar');
+        const arr = Array.isArray(data) ? data : (data && data.kullanicilar) || [];
+        return arr.map(k => ({
+          id: k.id,
+          name: k.ad_soyad,
+          email: k.email,
+          role: k.rol,
+          joined: k.kayit_tarihi,
+          _raw: k,
+        }));
+      },
+    },
+
+    /* ---- Waitlist (frontend-only stub) ---- */
+    async joinWaitlist(payload) {
+      global.Store.Waitlist && global.Store.Waitlist.add && global.Store.Waitlist.add(payload);
+      return { ok: true };
     },
   };
 
+  /* ---- Public GALLERY namespace ---------------------------- */
   global.GALLERY = Object.assign(global.GALLERY || {}, {
-    ARTWORKS, WORKSHOPS, REVIEWS, ORDERS, SUPPORT_TICKETS, COUPONS, OFFERS,
-    getArtwork, getWorkshop, getReviews, getOrder,
+    SITE,
+    COUPONS,
     api,
+    // Backwards-compat helpers (kept synchronous proxies returning Promise)
+    getArtwork: (id) => api.getArtwork(id),
+    getWorkshop: (id) => api.getWorkshop(id),
+    getReviews: (id, kind) => api.listReviews(id, 'recent', kind),
+    // Field mappers exposed for advanced page logic
+    mapEser, mapEtkinlik, mapYorum, mapRezervasyon, mapSiparis, mapFavori, mapDestek, mapDestekMesaj,
   });
 })(window);

@@ -248,16 +248,31 @@
     },
   };
 
-  /* ---- User session simulation ------------------------------- */
+  /* ---- User session (JWT-backed) ----------------------------- */
   const User = {
     get() { return read('user', null); },
-    set(profile) { write('user', profile); emit('user', profile); },
-    clear() { write('user', null); emit('user', null); },
-    isAuthed() { return !!User.get(); },
-    // Admin: role flag OR demo curator email
+    token() {
+      try { return localStorage.getItem(NS + 'token') || null; } catch (_) { return null; }
+    },
+    set(profile, token) {
+      write('user', profile);
+      if (token !== undefined) {
+        try {
+          if (token) localStorage.setItem(NS + 'token', token);
+          else localStorage.removeItem(NS + 'token');
+        } catch (_) {}
+      }
+      emit('user', profile);
+    },
+    clear() {
+      write('user', null);
+      try { localStorage.removeItem(NS + 'token'); } catch (_) {}
+      emit('user', null);
+    },
+    isAuthed() { return !!User.token(); },
     isAdmin() {
       const u = User.get();
-      return !!u && (u.role === 'admin' || (u.email || '').toLowerCase() === 'cem@example.com');
+      return !!(u && (u.role === 'admin' || u.rol === 'admin'));
     },
   };
 

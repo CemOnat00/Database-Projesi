@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workshops — The Curated Gallery · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="../js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-nav="admin" data-active="workshops" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+      <div>
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">Programme Management</p>
+        <h1 class="font-display text-5xl text-ink-strong">Workshops</h1>
+        <p id="ws-counter" class="mt-3 text-sm text-ink-muted">—</p>
+      </div>
+      <a href="workshop-edit.html" class="group bg-brand hover:bg-brand-hover text-white px-8 py-4 text-[11px] uppercase tracking-lux flex items-center gap-3 transition-colors">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add Workshop
+      </a>
+    </div>
+
+    <div class="bg-surface border border-line overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-bg-soft text-[11px] uppercase tracking-lux text-ink-muted">
+          <tr>
+            <th class="text-left px-5 py-4">ID</th>
+            <th class="text-left py-4">Title</th>
+            <th class="text-left py-4">Date</th>
+            <th class="text-left py-4">Time</th>
+            <th class="text-right py-4">Capacity</th>
+            <th class="text-right py-4">Price</th>
+            <th class="text-right py-4 pr-5">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="workshops-tbody" class="divide-y divide-line text-ink-strong"></tbody>
+      </table>
+    </div>
+
+    <div id="workshops-empty" class="hidden text-center bg-surface border border-line border-dashed py-20 px-6 mt-6">
+      <p class="font-display italic text-2xl text-ink-strong">No workshops scheduled.</p>
+      <p class="mt-3 text-sm text-ink-muted">Click "+ Add Workshop" to schedule the first session.</p>
+    </div>
+
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/components.js"></script>
+  <script src="../js/pages/admin/workshops.js"></script>
+</body>
+</html>

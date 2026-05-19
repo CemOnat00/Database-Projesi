@@ -1,5 +1,7 @@
 /* ============================================================
-   pages/compare.js — Karşılaştırma: tab + sütun + save
+   pages/compare.js — Karşılaştırma (backend bağlı)
+   • Liste backend'den GET /eserler veya /etkinlikler ile çekilir.
+   • Save → POST /karsilastir/eserler|etkinlikler + local Store.
    ============================================================ */
 
 (function () {
@@ -9,10 +11,11 @@
   let events = [];
   let activeTab = 'artworks';
 
-  Utils.onReady(function () {
+  Utils.onReady(async function () {
     initFromURL();
     bindTabs();
     bindSave();
+    await loadFromIds();
     renderAll();
   });
 
@@ -20,18 +23,37 @@
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
     if (tab === 'events') activeTab = 'events';
+  }
 
-    const ids = (params.get('ids') || '').split(',').filter(Boolean);
-    if (ids.length) {
-      if (activeTab === 'events') {
-        events = ids.map(GALLERY.getWorkshop).filter(Boolean).slice(0, 3);
-      } else {
-        artworks = ids.map(GALLERY.getArtwork).filter(Boolean).slice(0, 3);
-      }
+  async function loadFromIds() {
+    const params = new URLSearchParams(location.search);
+    const ids = (params.get('ids') || '').split(',').map(s => s.trim()).filter(Boolean);
+
+    if (ids.length === 0) {
+      // Default seed: first 3 of each from backend
+      try {
+        const [a, w] = await Promise.all([
+          GALLERY.api.listArtworks(),
+          GALLERY.api.listWorkshops(),
+        ]);
+        artworks = a.slice(0, 3);
+        events = w.slice(0, 3);
+      } catch (e) { console.warn('compare default load failed', e); }
+      return;
     }
-    // Default seed if no URL params
-    if (artworks.length === 0) artworks = GALLERY.ARTWORKS.slice(0, 3);
-    if (events.length === 0) events = GALLERY.WORKSHOPS.slice(0, 3);
+
+    try {
+      if (activeTab === 'events') {
+        const list = await Promise.all(ids.slice(0, 3).map(id => GALLERY.api.getWorkshop(id).catch(() => null)));
+        events = list.filter(Boolean);
+        // Diğer sekme için demo
+        try { artworks = (await GALLERY.api.listArtworks()).slice(0, 3); } catch (_) { artworks = []; }
+      } else {
+        const list = await Promise.all(ids.slice(0, 3).map(id => GALLERY.api.getArtwork(id).catch(() => null)));
+        artworks = list.filter(Boolean);
+        try { events = (await GALLERY.api.listWorkshops()).slice(0, 3); } catch (_) { events = []; }
+      }
+    } catch (e) { console.warn('compare load failed', e); }
   }
 
   function bindTabs() {
@@ -46,18 +68,25 @@
       Utils.qsa('.tab-pane').forEach(p => p.classList.add('hidden'));
       Utils.qs(`#tab-${activeTab}`).classList.remove('hidden');
     }));
-    // Initialize tab from URL
     const btn = Utils.qs(`.tab-btn[data-tab="${activeTab}"]`);
     if (btn) btn.click();
   }
 
   function bindSave() {
-    Utils.qs('#save-btn').addEventListener('click', () => {
-      const payload = activeTab === 'events'
-        ? { type: 'events', ids: events.map(e => e.id) }
-        : { type: 'artworks', ids: artworks.map(a => a.id) };
-      Store.Comparisons.save(`Comparison · ${new Date().toLocaleDateString()}`, payload);
-      Utils.toast('Comparison saved to your profile');
+    Utils.qs('#save-btn').addEventListener('click', async () => {
+      if (!Store.User.isAuthed()) {
+        Utils.toast('Sign in to save comparisons');
+        setTimeout(() => location.href = 'auth.html?next=' + encodeURIComponent(location.pathname + location.search), 600);
+        return;
+      }
+      const ids = activeTab === 'events' ? events.map(e => e.id) : artworks.map(a => a.id);
+      if (ids.length < 2) { Utils.toast('Pick at least 2 items to compare'); return; }
+      try {
+        await GALLERY.api.saveComparison(activeTab, ids);
+        Utils.toast('Comparison saved to your profile');
+      } catch (e) {
+        Utils.toast(e.message || 'Could not save comparison');
+      }
     });
   }
 
@@ -72,8 +101,8 @@
     const root = Utils.qs('#art-grid');
     root.innerHTML = artworks.map((a, i) => `
       <div class="bg-surface border border-line p-5">
-        <a href="artwork-detail.html?id=${a.id}" class="block overflow-hidden bg-bg-image aspect-[4/3] mb-4"><img src="${Utils.img(a.images[0], 600)}" alt="${Utils.escapeHTML(a.title)}" class="w-full h-full object-cover" /></a>
-        <p class="text-[11px] uppercase tracking-lux text-ink-muted">${Utils.escapeHTML(a.mediumShort)}</p>
+        <a href="artwork-detail.html?id=${a.id}" class="block overflow-hidden bg-bg-image aspect-[4/3] mb-4"><img src="${Utils.img(a.image, 600)}" alt="${Utils.escapeHTML(a.title)}" class="w-full h-full object-cover" /></a>
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted">${Utils.escapeHTML(a.mediumShort || a.category)}</p>
         <h3 class="font-display text-xl text-ink-strong mt-1">${Utils.escapeHTML(a.title)}</h3>
         <p class="text-sm text-ink-muted mt-1">${Utils.escapeHTML(a.artist)}</p>
         <p class="text-brand mt-2">${Utils.fmtMoney(a.price)}</p>
@@ -112,20 +141,14 @@
   function cap(s) { return String(s || '').replace(/^./, c => c.toUpperCase()); }
 
   function renderArtAttrs() {
-    // Req 11: "kategori, fiyat ve sanatçı açısından" + medium/dimensions/year
     const fields = [
       { label: 'Artist',     get: a => Utils.escapeHTML(a.artist) },
       { label: 'Category',   get: a => Utils.escapeHTML(cap(a.category)) },
       { label: 'Medium',     get: a => Utils.escapeHTML(a.medium) },
-      { label: 'Dimensions', get: a => Utils.escapeHTML(a.dimensions) },
       { label: 'Year',       get: a => a.year },
-      { label: 'Price',      get: a => {
-          if (a.campaign && a.campaign.type === 'sale' && a.campaign.pct) {
-            const sale = Math.round(a.price * (100 - a.campaign.pct) / 100);
-            return `<span class="line-through text-ink-muted text-xs mr-1">${Utils.fmtMoney(a.price)}</span><span class="text-accent">${Utils.fmtMoney(sale)}</span>`;
-          }
-          return a.sold ? `<span class="line-through text-ink-muted">${Utils.fmtMoney(a.price)}</span> · Sold` : Utils.fmtMoney(a.price);
-        } },
+      { label: 'Price',      get: a => a.sold
+          ? `<span class="line-through text-ink-muted">${Utils.fmtMoney(a.price)}</span> · Sold`
+          : Utils.fmtMoney(a.price) },
     ];
     Utils.qs('#art-attrs').innerHTML = fields.map(f => `
       <div class="grid grid-cols-4 border-b border-line">
@@ -137,22 +160,13 @@
   }
 
   function renderEventAttrs() {
-    // Req 11: "tarih, ücret ve kontenjan açısından"
     const fields = [
       { label: 'Instructor', get: w => Utils.escapeHTML(w.instructor) },
       { label: 'Level',      get: w => Utils.escapeHTML(w.level) },
       { label: 'Date',       get: w => Utils.escapeHTML((w.sessions && w.sessions[0] && w.sessions[0].dateLong) || '—') },
       { label: 'Time',       get: w => Utils.escapeHTML((w.sessions && w.sessions[0] && w.sessions[0].time) || '—') },
       { label: 'Capacity',   get: w => `${w.spotsLeft} of ${w.capacity} seats` },
-      { label: 'Rating',     get: w => (w.stats && w.stats.rating) ? `${w.stats.rating} ★` : '—' },
-      { label: 'Price',      get: w => {
-          if (w.complimentary || !w.price) return 'Complimentary';
-          if (w.campaign && w.campaign.type === 'sale' && w.campaign.pct) {
-            const sale = Math.round(w.price * (100 - w.campaign.pct) / 100);
-            return `<span class="line-through text-ink-muted text-xs mr-1">${Utils.fmtMoney(w.price)}</span><span class="text-accent">${Utils.fmtMoney(sale)}</span>`;
-          }
-          return Utils.fmtMoney(w.price);
-        } },
+      { label: 'Price',      get: w => w.complimentary || !w.price ? 'Complimentary' : Utils.fmtMoney(w.price) },
     ];
     Utils.qs('#ev-attrs').innerHTML = fields.map(f => `
       <div class="grid grid-cols-4 border-b border-line">
@@ -163,7 +177,6 @@
     `).join('');
   }
 
-  // Expose for inline onclick
   window.removeArt = function (i) { artworks.splice(i, 1); renderAll(); };
   window.removeEvent = function (i) { events.splice(i, 1); renderAll(); };
 })();

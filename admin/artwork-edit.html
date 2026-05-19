@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Artwork — The Curated Gallery · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="../js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body data-nav="admin" data-active="artworks" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-4xl mx-auto px-6 lg:px-12 py-12">
+
+    <!-- Breadcrumb -->
+    <nav class="text-[11px] uppercase tracking-lux text-ink-muted mb-8">
+      <a href="artworks.html" class="hover:text-ink-strong">Artworks</a>
+      <span class="mx-2 text-ink-faint">/</span>
+      <span id="page-mode" class="text-ink-strong">New</span>
+    </nav>
+
+    <header class="mb-10">
+      <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">Catalogue Management</p>
+      <h1 id="page-title" class="font-display text-5xl text-ink-strong">New Artwork</h1>
+      <p class="mt-3 text-sm text-ink-muted">Add an artwork to the catalogue. Visitors will see this on the gallery and in detail pages.</p>
+    </header>
+
+    <form id="artwork-form" class="bg-surface border border-line p-8 space-y-8">
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="md:col-span-2">
+          <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Title *</label>
+          <input name="baslik" type="text" required minlength="2" maxlength="200" placeholder="e.g. Midnight Resonance" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+        </div>
+
+        <div>
+          <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Artist *</label>
+          <select name="sanatci_id" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand">
+            <option value="">Loading…</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Category</label>
+          <select name="kategori" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand">
+            <option value="painting">Painting</option>
+            <option value="photography">Photography</option>
+            <option value="sculpture">Sculpture</option>
+            <option value="digital">Digital</option>
+            <option value="print">Print</option>
+            <option value="drawing">Drawing</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Image URL *</label>
+          <input name="gorsel_url" type="url" required placeholder="https://images.unsplash.com/photo-…" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+          <p class="mt-2 text-[11px] text-ink-muted">Paste an Unsplash or CDN link. File upload will be enabled in a later iteration.</p>
+        </div>
+
+        <div>
+          <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Price (USD) *</label>
+          <input name="fiyat" type="number" min="0" step="0.01" required placeholder="4200" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+        </div>
+
+        <div>
+          <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Stock *</label>
+          <input name="stok_adedi" type="number" min="0" step="1" required value="1" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+          <p class="mt-2 text-[11px] text-ink-muted">For unique works, use 1. Sold-out artworks show stock = 0.</p>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Description</label>
+          <textarea name="aciklama" rows="5" placeholder="A few sentences about the work, medium, story…" class="w-full border border-line p-3 focus:outline-none focus:border-brand bg-transparent text-sm"></textarea>
+        </div>
+      </div>
+
+      <p id="form-msg" class="text-[11px] uppercase tracking-lux min-h-[1rem]"></p>
+
+      <div class="flex flex-col sm:flex-row gap-3 border-t border-line pt-6">
+        <button type="submit" id="submit-btn" class="group flex-1 bg-brand hover:bg-brand-hover text-white py-4 text-[11px] uppercase tracking-lux flex items-center justify-center gap-3 transition-colors">
+          <span id="submit-label">Save Artwork</span>
+          <svg width="16" height="10" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" class="motion-safe:transition-transform group-hover:translate-x-1"><path d="M1 5h15M12 1l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <a href="artworks.html" class="flex-1 border border-ink-strong/30 py-4 text-[11px] uppercase tracking-lux text-ink-strong hover:bg-ink-strong hover:text-white transition-colors text-center">Cancel</a>
+      </div>
+
+      <p class="text-[11px] text-ink-muted leading-relaxed">All changes save to the backend immediately.</p>
+    </form>
+
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/components.js"></script>
+  <script src="../js/pages/admin/artwork-edit.js"></script>
+</body>
+</html>

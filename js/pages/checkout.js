@@ -1,6 +1,6 @@
 /* ============================================================
    pages/checkout.js — Sepetten oku, kupon uygula, sipariş ver
-   Backend-ready: GALLERY.api.createOrder & validateCoupon.
+   • POST /siparisler {eser_idler, odeme_yontemi, kupon_kodu}
    ============================================================ */
 
 (function () {
@@ -24,9 +24,9 @@
     if (!user) return;
     const form = Utils.qs('#checkout-form');
     if (!form) return;
-    const set = (name, val) => {
-      const el = form.querySelector(`[name="${name}"]`);
-      if (el && val != null && val !== '') el.value = val;
+    const set = (n, v) => {
+      const el = form.querySelector(`[name="${n}"]`);
+      if (el && v != null && v !== '') el.value = v;
     };
     set('email', user.email);
     set('phone', user.phone);
@@ -51,29 +51,28 @@
         <div class="flex-1">
           <p class="font-display text-ink-strong">${Utils.escapeHTML(it.title)}</p>
           <p class="text-[11px] uppercase tracking-lux text-ink-muted">${Utils.escapeHTML(it.artist)}</p>
-          <p class="text-[11px] uppercase tracking-lux text-ink-muted mt-1">${it.type === 'workshop' ? (it.qty || 1) + ' participants' : 'Qty 1'}</p>
+          <p class="text-[11px] uppercase tracking-lux text-ink-muted mt-1">Qty ${it.qty || 1}</p>
         </div>
         <div class="text-right">
           <p class="text-sm text-ink-strong">${Utils.fmtMoney(it.price * (it.qty || 1))}</p>
-          <button class="mt-2 text-[10px] uppercase tracking-lux text-accent hover:text-brand" onclick="removeCartItem('${it.refId}', '${it.sessionDate || ''}')">Remove</button>
+          <button class="mt-2 text-[10px] uppercase tracking-lux text-accent hover:text-brand" onclick="removeCartItem('${it.refId}')">Remove</button>
         </div>
       </li>
     `).join('');
   }
 
   function refreshUI() {
-    // Toggle the "empty cart" panel + disable submit when nothing to buy
     const items = Store.Cart.items();
     const empty = Utils.qs('#empty-cart');
     const formArea = Utils.qs('#checkout-form');
     const submitBtn = Utils.qs('#place-order');
     if (items.length === 0) {
       if (empty) empty.classList.remove('hidden');
-      if (formArea) formArea.classList.add('opacity-40','pointer-events-none');
+      if (formArea) formArea.classList.add('opacity-40', 'pointer-events-none');
       if (submitBtn) submitBtn.disabled = true;
     } else {
       if (empty) empty.classList.add('hidden');
-      if (formArea) formArea.classList.remove('opacity-40','pointer-events-none');
+      if (formArea) formArea.classList.remove('opacity-40', 'pointer-events-none');
       if (submitBtn) submitBtn.disabled = false;
     }
   }
@@ -83,7 +82,6 @@
       state.paymentMethod = r.value;
       applyPaymentMode(r.value);
     }));
-    // Initialize for the default checked option
     const checked = Utils.qs('input[name="pay"]:checked');
     if (checked) applyPaymentMode(checked.value);
   }
@@ -95,7 +93,6 @@
     if (cardFields)   cardFields.classList.toggle('hidden', method !== 'card');
     if (bankNotice)   bankNotice.classList.toggle('hidden', method !== 'bank');
     if (paypalNotice) paypalNotice.classList.toggle('hidden', method !== 'paypal');
-    // Card fields are required only when method === 'card'
     Utils.qsa('.card-field').forEach(el => {
       if (method === 'card') el.setAttribute('required', '');
       else el.removeAttribute('required');
@@ -130,48 +127,33 @@
   function bindSubmit() {
     Utils.qs('#checkout-form').addEventListener('submit', async e => {
       e.preventDefault();
+      if (!Store.User.isAuthed()) {
+        Utils.toast('Sign in to place your order');
+        setTimeout(() => location.href = 'auth.html?next=checkout.html', 600);
+        return;
+      }
+
       const items = Store.Cart.items();
       if (items.length === 0) { Utils.toast('Cart is empty'); return; }
 
-      const subtotal = Store.Cart.subtotal();
-      const discount = Math.round(subtotal * state.discountPct / 100);
-      const tax = Math.round((subtotal - discount + GALLERY.SITE.shippingFee) * GALLERY.SITE.taxRate);
-      const total = subtotal - discount + GALLERY.SITE.shippingFee + tax;
-
-      const result = await GALLERY.api.createOrder({
-        items: items.slice(),
-        subtotal,
-        shipping: GALLERY.SITE.shippingFee,
-        discount,
-        discountCode: state.discountCode,
-        tax,
-        total,
-        paymentMethod: state.paymentMethod,
-        customer: collectCustomer(),
-      });
-
-      if (!result.ok) {
-        Utils.toast('Could not place order — please try again.');
-        return;
+      try {
+        const result = await GALLERY.api.createOrder({
+          items: items.slice(),
+          paymentMethod: state.paymentMethod,
+          discountCode: state.discountCode || '',
+        });
+        Store.LastOrder.set(result.order);
+        Store.Cart.clear();
+        location.href = 'confirmation.html?id=' + encodeURIComponent(result.order.id);
+      } catch (err) {
+        if (err.status === 401) {
+          Utils.toast('Session expired — please sign in again');
+          setTimeout(() => location.href = 'auth.html?next=checkout.html', 600);
+        } else {
+          Utils.toast(err.message || 'Could not place order — please try again.');
+        }
       }
-      Store.LastOrder.set(result.order);
-      Store.Cart.clear();
-      location.href = 'confirmation.html?id=' + encodeURIComponent(result.order.id);
     });
-  }
-
-  function collectCustomer() {
-    const fd = new FormData(Utils.qs('#checkout-form'));
-    return {
-      email:      fd.get('email') || '',
-      phone:      fd.get('phone') || '',
-      firstName:  fd.get('firstName') || '',
-      lastName:   fd.get('lastName') || '',
-      address:    fd.get('address') || '',
-      city:       fd.get('city') || '',
-      postalCode: fd.get('postalCode') || '',
-      country:    fd.get('country') || '',
-    };
   }
 
   function refresh() {
@@ -196,8 +178,8 @@
     }
   }
 
-  window.removeCartItem = function (refId, sessionDate) {
-    Store.Cart.remove(refId, sessionDate || null);
+  window.removeCartItem = function (refId) {
+    Store.Cart.remove(refId);
     Utils.toast('Removed from cart');
   };
 })();
