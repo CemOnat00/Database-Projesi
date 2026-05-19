@@ -120,6 +120,52 @@ func (h *EserHandler) DetayGetir(c *gin.Context) {
 	response.OK(c, "eser getirildi", eser)
 }
 
+func (h *EserHandler) Olustur(c *gin.Context) {
+	var req dto.EserOlusturIstegi
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ValidationError(c, err.Error())
+		return
+	}
+	eser, err := h.svc.Olustur(&req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.Created(c, "eser oluşturuldu", eser)
+}
+
+func (h *EserHandler) Guncelle(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	var req dto.EserGuncelleIstegi
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ValidationError(c, err.Error())
+		return
+	}
+	eser, err := h.svc.Guncelle(id, &req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "eser güncellendi", eser)
+}
+
+func (h *EserHandler) Sil(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if err := h.svc.Sil(id); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "eser silindi", nil)
+}
+
 // ── Sanatçı Handler ───────────────────────────────────────────────────────────
 
 type SanatciHandler struct{ svc domainsvc.SanatciService }
@@ -147,6 +193,52 @@ func (h *SanatciHandler) DetayGetir(c *gin.Context) {
 		return
 	}
 	response.OK(c, "sanatçı getirildi", sanatci)
+}
+
+func (h *SanatciHandler) Olustur(c *gin.Context) {
+	var req dto.SanatciOlusturIstegi
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ValidationError(c, err.Error())
+		return
+	}
+	sanatci, err := h.svc.Olustur(&req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.Created(c, "sanatçı oluşturuldu", sanatci)
+}
+
+func (h *SanatciHandler) Guncelle(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	var req dto.SanatciGuncelleIstegi
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ValidationError(c, err.Error())
+		return
+	}
+	sanatci, err := h.svc.Guncelle(id, &req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "sanatçı güncellendi", sanatci)
+}
+
+func (h *SanatciHandler) Sil(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if err := h.svc.Sil(id); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "sanatçı silindi", nil)
 }
 
 // ── Etkinlik Handler ──────────────────────────────────────────────────────────
@@ -178,6 +270,52 @@ func (h *EtkinlikHandler) DetayGetir(c *gin.Context) {
 		return
 	}
 	response.OK(c, "etkinlik getirildi", etkinlik)
+}
+
+func (h *EtkinlikHandler) Olustur(c *gin.Context) {
+	var req dto.EtkinlikOlusturIstegi
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ValidationError(c, err.Error())
+		return
+	}
+	etkinlik, err := h.svc.Olustur(&req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.Created(c, "etkinlik oluşturuldu", etkinlik)
+}
+
+func (h *EtkinlikHandler) Guncelle(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	var req dto.EtkinlikGuncelleIstegi
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ValidationError(c, err.Error())
+		return
+	}
+	etkinlik, err := h.svc.Guncelle(id, &req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "etkinlik güncellendi", etkinlik)
+}
+
+func (h *EtkinlikHandler) Sil(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if err := h.svc.Sil(id); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "etkinlik silindi", nil)
 }
 
 // ── Rezervasyon Handler ───────────────────────────────────────────────────────
@@ -629,4 +767,48 @@ func (h *KampanyaHandler) OzelFirsatlar(c *gin.Context) {
 		return
 	}
 	response.OK(c, "özel fırsatlar getirildi", firsatlar)
+}
+
+// ── Admin Handler ─────────────────────────────────────────────────────────────
+
+type AdminHandler struct{ svc domainsvc.AdminService }
+
+func NewAdminHandler(svc domainsvc.AdminService) *AdminHandler {
+	return &AdminHandler{svc}
+}
+
+func (h *AdminHandler) TumSiparisleri(c *gin.Context) {
+	liste, err := h.svc.TumSiparisleri()
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "siparişler getirildi", liste)
+}
+
+func (h *AdminHandler) TumRezervasyonlari(c *gin.Context) {
+	liste, err := h.svc.TumRezervasyonlari()
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "rezervasyonlar getirildi", liste)
+}
+
+func (h *AdminHandler) TumDestekTaleplerini(c *gin.Context) {
+	liste, err := h.svc.TumDestekTaleplerini()
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "destek talepleri getirildi", liste)
+}
+
+func (h *AdminHandler) TumKullanicilari(c *gin.Context) {
+	liste, err := h.svc.TumKullanicilari()
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "kullanıcılar getirildi", liste)
 }

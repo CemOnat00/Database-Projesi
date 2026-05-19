@@ -25,6 +25,7 @@ func Kur(
 	karsilastirmaH *handler.KarsilastirmaHandler,
 	istatistikH *handler.IstatistikHandler,
 	kampanyaH *handler.KampanyaHandler,
+	adminH *handler.AdminHandler,
 ) *gin.Engine {
 
 	r := gin.New()
@@ -120,13 +121,36 @@ func Kur(
 		k.GET("/istatistik/eser/:id", istatistikH.EserIstatistigi)
 		k.GET("/istatistik/etkinlik/:id", istatistikH.EtkinlikIstatistigi)
 
-		// Admin rapor
 		admin := api.Group("/admin")
 		admin.Use(middleware.GirisGerekli(jwtManager))
 		admin.Use(middleware.RolGerekli("admin"))
 		{
+			// Rapor
 			admin.GET("/rapor", istatistikH.AdminRapor)
+
+			// Yorum yanıtlama
 			admin.POST("/yorumlar/:id/yanit", yorumH.YanitEkle)
+
+			// Eser CRUD
+			admin.POST("/eserler", eserH.Olustur)
+			admin.PUT("/eserler/:id", eserH.Guncelle)
+			admin.DELETE("/eserler/:id", eserH.Sil)
+
+			// Etkinlik CRUD
+			admin.POST("/etkinlikler", etkinlikH.Olustur)
+			admin.PUT("/etkinlikler/:id", etkinlikH.Guncelle)
+			admin.DELETE("/etkinlikler/:id", etkinlikH.Sil)
+
+			// Sanatçı CRUD
+			admin.POST("/sanatcilar", sanatciH.Olustur)
+			admin.PUT("/sanatcilar/:id", sanatciH.Guncelle)
+			admin.DELETE("/sanatcilar/:id", sanatciH.Sil)
+
+			// Admin listeleme
+			admin.GET("/siparisler", adminH.TumSiparisleri)
+			admin.GET("/rezervasyonlar", adminH.TumRezervasyonlari)
+			admin.GET("/destek", adminH.TumDestekTaleplerini)
+			admin.GET("/kullanicilar", adminH.TumKullanicilari)
 		}
 	}
 

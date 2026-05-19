@@ -38,6 +38,7 @@ func main() {
 	destekRepo := infrarepo.NewDestekRepo(db)
 	destekMesajRepo := infrarepo.NewDestekMesajRepo(db)
 	karsilastirmaRepo := infrarepo.NewKarsilastirmaRepo(db)
+	adminRepo := infrarepo.NewAdminRepo(db)
 
 	// 5. Service'ler
 	authSvc := infrasvc.NewAuthService(kullaniciRepo, jwtManager)
@@ -54,6 +55,7 @@ func main() {
 	karsilastirmaSvc := infrasvc.NewKarsilastirmaService(eserRepo, etkinlikRepo, karsilastirmaRepo)
 	istatistikSvc := infrasvc.NewIstatistikService(db)
 	kampanyaSvc := infrasvc.NewKampanyaService(db, kuponRepo)
+	adminSvc := infrasvc.NewAdminService(adminRepo)
 
 	// 6. Handler'lar
 	authH := handler.NewAuthHandler(authSvc)
@@ -70,13 +72,14 @@ func main() {
 	karsilastirmaH := handler.NewKarsilastirmaHandler(karsilastirmaSvc)
 	istatistikH := handler.NewIstatistikHandler(istatistikSvc)
 	kampanyaH := handler.NewKampanyaHandler(kampanyaSvc)
+	adminH := handler.NewAdminHandler(adminSvc)
 
 	// 7. Router'ı kur ve başlat
 	r := router.Kur(
 		jwtManager,
 		authH, kullaniciH, eserH, sanatciH, etkinlikH,
 		rezervasyonH, siparisH, favoriH, yorumH, destekH,
-		destekMesajH, karsilastirmaH, istatistikH, kampanyaH,
+		destekMesajH, karsilastirmaH, istatistikH, kampanyaH, adminH,
 	)
 
 	addr := ":" + cfg.Server.Port
