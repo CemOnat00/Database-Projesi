@@ -117,10 +117,11 @@
     hero.alt = workshop.title;
 
     const tg = Utils.qs('#thumb-grid');
-    const imgs = (workshop.images && workshop.images.length > 0) ? workshop.images.slice(0, 4) : [workshop.image];
+    // Tüm görseller sırayla — admin'in yüklediği sırada
+    const imgs = (workshop.images && workshop.images.length > 0) ? workshop.images : [workshop.image].filter(Boolean);
     if (imgs.length <= 1) { tg.classList.add('hidden'); return; }
     tg.classList.remove('hidden');
-    tg.className = `grid gap-3 grid-cols-${Math.min(imgs.length, 3)}`;
+    tg.className = 'grid gap-3 grid-cols-4';
     tg.innerHTML = imgs.map((src, i) => `
       <button class="thumb overflow-hidden aspect-[4/3] ${i === 0 ? 'ring-1 ring-ink-strong ring-offset-2 ring-offset-bg' : ''}" data-src="${Utils.img(src, 1600)}" aria-label="View ${i + 1}">
         <img src="${Utils.img(src, 400)}" alt="${Utils.escapeHTML(workshop.title)} — view ${i + 1}" class="w-full h-full object-cover" />

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/bscc/go-backend/internal/domain/entity"
 	domainrepo "github.com/bscc/go-backend/internal/domain/repository"
@@ -69,7 +70,9 @@ func NewEserRepo(db *gorm.DB) domainrepo.EserRepository {
 
 func (r *GormEserRepo) Listele() ([]*entity.Eser, error) {
 	var eserler []*entity.Eser
-	if err := r.db.Preload("Sanatci").Find(&eserler).Error; err != nil {
+	if err := r.db.Preload("Sanatci").
+		Preload("Gorseller", func(db *gorm.DB) *gorm.DB { return db.Order("sira ASC") }).
+		Find(&eserler).Error; err != nil {
 		return nil, apperror.Internal("eserler getirilemedi", err)
 	}
 	return eserler, nil
@@ -77,7 +80,9 @@ func (r *GormEserRepo) Listele() ([]*entity.Eser, error) {
 
 func (r *GormEserRepo) IDileGetir(id uint) (*entity.Eser, error) {
 	var eser entity.Eser
-	if err := r.db.Preload("Sanatci").First(&eser, id).Error; err != nil {
+	if err := r.db.Preload("Sanatci").
+		Preload("Gorseller", func(db *gorm.DB) *gorm.DB { return db.Order("sira ASC") }).
+		First(&eser, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, apperror.NotFound("eser bulunamadı")
 		}
@@ -88,7 +93,9 @@ func (r *GormEserRepo) IDileGetir(id uint) (*entity.Eser, error) {
 
 func (r *GormEserRepo) KategoriileListele(kategori string) ([]*entity.Eser, error) {
 	var eserler []*entity.Eser
-	if err := r.db.Preload("Sanatci").Where("kategori = ?", kategori).Find(&eserler).Error; err != nil {
+	if err := r.db.Preload("Sanatci").
+		Preload("Gorseller", func(db *gorm.DB) *gorm.DB { return db.Order("sira ASC") }).
+		Where("kategori = ?", kategori).Find(&eserler).Error; err != nil {
 		return nil, apperror.Internal("eserler getirilemedi", err)
 	}
 	return eserler, nil
@@ -111,6 +118,55 @@ func (r *GormEserRepo) Guncelle(e *entity.Eser) error {
 func (r *GormEserRepo) Sil(id uint) error {
 	if err := r.db.Delete(&entity.Eser{}, id).Error; err != nil {
 		return apperror.Internal("eser silinemedi", err)
+	}
+	return nil
+}
+
+// ── Eser görselleri (çoklu görsel) ──
+
+func (r *GormEserRepo) GorselEkle(g *entity.EserGorseli) error {
+	if err := r.db.Create(g).Error; err != nil {
+		return apperror.Internal("görsel eklenemedi", err)
+	}
+	return nil
+}
+
+func (r *GormEserRepo) GorselGuncelle(g *entity.EserGorseli) error {
+	if err := r.db.Save(g).Error; err != nil {
+		return apperror.Internal("görsel güncellenemedi", err)
+	}
+	return nil
+}
+
+func (r *GormEserRepo) GorselleriListele(eserID uint) ([]*entity.EserGorseli, error) {
+	var gorseller []*entity.EserGorseli
+	if err := r.db.Where("eser_id = ?", eserID).Order("sira ASC").Find(&gorseller).Error; err != nil {
+		return nil, apperror.Internal("görseller getirilemedi", err)
+	}
+	return gorseller, nil
+}
+
+func (r *GormEserRepo) GorselGetir(gorselID uint) (*entity.EserGorseli, error) {
+	var g entity.EserGorseli
+	if err := r.db.First(&g, gorselID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NotFound("görsel bulunamadı")
+		}
+		return nil, apperror.Internal("veritabanı hatası", err)
+	}
+	return &g, nil
+}
+
+func (r *GormEserRepo) GorselSil(gorselID uint) error {
+	if err := r.db.Delete(&entity.EserGorseli{}, gorselID).Error; err != nil {
+		return apperror.Internal("görsel silinemedi", err)
+	}
+	return nil
+}
+
+func (r *GormEserRepo) GorselleriTemizle(eserID uint) error {
+	if err := r.db.Where("eser_id = ?", eserID).Delete(&entity.EserGorseli{}).Error; err != nil {
+		return apperror.Internal("görseller temizlenemedi", err)
 	}
 	return nil
 }
@@ -157,6 +213,16 @@ func (r *GormSanatciRepo) Guncelle(s *entity.Sanatci) error {
 }
 
 func (r *GormSanatciRepo) Sil(id uint) error {
+	// Sanatçıya bağlı eser varsa silme engellenir — aksi halde veritabanı
+	// foreign key kısıtı yüzünden işlem belirsiz bir hatayla başarısız olur.
+	var eserSayisi int64
+	if err := r.db.Model(&entity.Eser{}).Where("sanatci_id = ?", id).Count(&eserSayisi).Error; err != nil {
+		return apperror.Internal("sanatçı silinemedi", err)
+	}
+	if eserSayisi > 0 {
+		return apperror.BadRequest(fmt.Sprintf(
+			"Bu sanatçının %d eseri var. Önce eserlerini silin, sonra sanatçıyı silebilirsiniz.", eserSayisi))
+	}
 	if err := r.db.Delete(&entity.Sanatci{}, id).Error; err != nil {
 		return apperror.Internal("sanatçı silinemedi", err)
 	}
@@ -173,7 +239,9 @@ func NewEtkinlikRepo(db *gorm.DB) domainrepo.EtkinlikRepository {
 
 func (r *GormEtkinlikRepo) Listele() ([]*entity.Etkinlik, error) {
 	var etkinlikler []*entity.Etkinlik
-	if err := r.db.Find(&etkinlikler).Error; err != nil {
+	if err := r.db.
+		Preload("Gorseller", func(db *gorm.DB) *gorm.DB { return db.Order("sira ASC") }).
+		Find(&etkinlikler).Error; err != nil {
 		return nil, apperror.Internal("etkinlikler getirilemedi", err)
 	}
 	return etkinlikler, nil
@@ -181,7 +249,9 @@ func (r *GormEtkinlikRepo) Listele() ([]*entity.Etkinlik, error) {
 
 func (r *GormEtkinlikRepo) IDileGetir(id uint) (*entity.Etkinlik, error) {
 	var e entity.Etkinlik
-	if err := r.db.First(&e, id).Error; err != nil {
+	if err := r.db.
+		Preload("Gorseller", func(db *gorm.DB) *gorm.DB { return db.Order("sira ASC") }).
+		First(&e, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, apperror.NotFound("etkinlik bulunamadı")
 		}
@@ -207,6 +277,55 @@ func (r *GormEtkinlikRepo) Guncelle(e *entity.Etkinlik) error {
 func (r *GormEtkinlikRepo) Sil(id uint) error {
 	if err := r.db.Delete(&entity.Etkinlik{}, id).Error; err != nil {
 		return apperror.Internal("etkinlik silinemedi", err)
+	}
+	return nil
+}
+
+// ── Etkinlik görselleri (çoklu görsel) ──
+
+func (r *GormEtkinlikRepo) GorselEkle(g *entity.EtkinlikGorseli) error {
+	if err := r.db.Create(g).Error; err != nil {
+		return apperror.Internal("görsel eklenemedi", err)
+	}
+	return nil
+}
+
+func (r *GormEtkinlikRepo) GorselGuncelle(g *entity.EtkinlikGorseli) error {
+	if err := r.db.Save(g).Error; err != nil {
+		return apperror.Internal("görsel güncellenemedi", err)
+	}
+	return nil
+}
+
+func (r *GormEtkinlikRepo) GorselleriListele(etkinlikID uint) ([]*entity.EtkinlikGorseli, error) {
+	var gorseller []*entity.EtkinlikGorseli
+	if err := r.db.Where("etkinlik_id = ?", etkinlikID).Order("sira ASC").Find(&gorseller).Error; err != nil {
+		return nil, apperror.Internal("görseller getirilemedi", err)
+	}
+	return gorseller, nil
+}
+
+func (r *GormEtkinlikRepo) GorselGetir(gorselID uint) (*entity.EtkinlikGorseli, error) {
+	var g entity.EtkinlikGorseli
+	if err := r.db.First(&g, gorselID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperror.NotFound("görsel bulunamadı")
+		}
+		return nil, apperror.Internal("veritabanı hatası", err)
+	}
+	return &g, nil
+}
+
+func (r *GormEtkinlikRepo) GorselSil(gorselID uint) error {
+	if err := r.db.Delete(&entity.EtkinlikGorseli{}, gorselID).Error; err != nil {
+		return apperror.Internal("görsel silinemedi", err)
+	}
+	return nil
+}
+
+func (r *GormEtkinlikRepo) GorselleriTemizle(etkinlikID uint) error {
+	if err := r.db.Where("etkinlik_id = ?", etkinlikID).Delete(&entity.EtkinlikGorseli{}).Error; err != nil {
+		return apperror.Internal("görseller temizlenemedi", err)
 	}
 	return nil
 }

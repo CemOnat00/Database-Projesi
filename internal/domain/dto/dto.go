@@ -42,15 +42,24 @@ type SifreDegistirIstegi struct {
 // ── Eserler ───────────────────────────────────────────────────────────────────
 
 type EserDTO struct {
-	ID            uint       `json:"id"`
-	Baslik        string     `json:"baslik"`
-	Aciklama      string     `json:"aciklama"`
-	GorselURL     string     `json:"gorsel_url"`
-	Kategori      string     `json:"kategori"`
-	Fiyat         float64    `json:"fiyat"`
-	StokAdedi     int        `json:"stok_adedi"`
-	EklenmeTarihi time.Time  `json:"eklenme_tarihi"`
-	Sanatci       SanatciDTO `json:"sanatci"`
+	ID            uint        `json:"id"`
+	Baslik        string      `json:"baslik"`
+	Aciklama      string      `json:"aciklama"`
+	GorselURL     string      `json:"gorsel_url"`
+	Kategori      string      `json:"kategori"`
+	Fiyat         float64     `json:"fiyat"`
+	StokAdedi     int         `json:"stok_adedi"`
+	EklenmeTarihi time.Time   `json:"eklenme_tarihi"`
+	Sanatci       SanatciDTO  `json:"sanatci"`
+	Gorseller     []GorselDTO `json:"gorseller,omitempty"`
+}
+
+// GorselDTO — eser veya etkinlik altındaki bir dosya görseli (yüklü dosya)
+type GorselDTO struct {
+	ID        uint   `json:"id"`
+	URL       string `json:"url"` // istemciye gönderilecek tam yol (örn. /uploads/eserler/12/abc.jpg)
+	Sira      int    `json:"sira"`
+	PrimaryMi bool   `json:"primary_mi"`
 }
 
 // ── Sanatçılar ────────────────────────────────────────────────────────────────
@@ -64,14 +73,15 @@ type SanatciDTO struct {
 // ── Etkinlikler ───────────────────────────────────────────────────────────────
 
 type EtkinlikDTO struct {
-	ID             uint      `json:"id"`
-	Baslik         string    `json:"baslik"`
-	Aciklama       string    `json:"aciklama"`
-	GorselURL      string    `json:"gorsel_url"`
-	EtkinlikTarihi time.Time `json:"etkinlik_tarihi"`
-	BaslangicSaati string    `json:"baslangic_saati"`
-	Kontenjan      int       `json:"kontenjan"`
-	Ucret          float64   `json:"ucret"`
+	ID             uint        `json:"id"`
+	Baslik         string      `json:"baslik"`
+	Aciklama       string      `json:"aciklama"`
+	GorselURL      string      `json:"gorsel_url"`
+	EtkinlikTarihi time.Time   `json:"etkinlik_tarihi"`
+	BaslangicSaati string      `json:"baslangic_saati"`
+	Kontenjan      int         `json:"kontenjan"`
+	Ucret          float64     `json:"ucret"`
+	Gorseller      []GorselDTO `json:"gorseller,omitempty"`
 }
 
 // ── Rezervasyonlar ────────────────────────────────────────────────────────────
@@ -127,13 +137,21 @@ type YorumEkleIstegi struct {
 }
 
 type YorumDTO struct {
-	ID              uint         `json:"id"`
-	Puan            int          `json:"puan"`
-	Metin           string       `json:"metin"`
-	FaydalıOySayisi int          `json:"faydali_oy_sayisi"`
-	DogrulanmisMi   bool         `json:"dogrulanmis_mi"`
-	OlusturmaTarihi time.Time    `json:"olusturma_tarihi"`
-	Kullanici       KullaniciDTO `json:"kullanici"`
+	ID              uint             `json:"id"`
+	Puan            int              `json:"puan"`
+	Metin           string           `json:"metin"`
+	FaydalıOySayisi int              `json:"faydali_oy_sayisi"`
+	DogrulanmisMi   bool             `json:"dogrulanmis_mi"`
+	OlusturmaTarihi time.Time        `json:"olusturma_tarihi"`
+	Kullanici       KullaniciDTO     `json:"kullanici"`
+	Yanitlar        []YorumYanitiDTO `json:"yanitlar"`
+}
+
+// YorumYanitiDTO — yoruma verilen küratör (admin) yanıtı.
+type YorumYanitiDTO struct {
+	ID              uint      `json:"id"`
+	YanitMetni      string    `json:"yanit_metni"`
+	OlusturmaTarihi time.Time `json:"olusturma_tarihi"`
 }
 
 type YanitEkleIstegi struct {
@@ -259,7 +277,7 @@ type EserOlusturIstegi struct {
 	GorselURL string  `json:"gorsel_url"`
 	Kategori  string  `json:"kategori"`
 	Fiyat     float64 `json:"fiyat"      binding:"required,gt=0"`
-	StokAdedi int     `json:"stok_adedi" binding:"required,min=0"`
+	StokAdedi int     `json:"stok_adedi" binding:"min=0"`
 }
 
 type EserGuncelleIstegi struct {

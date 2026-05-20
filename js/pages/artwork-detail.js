@@ -79,15 +79,16 @@
     hero.alt = artwork.title;
 
     const tg = Utils.qs('#thumb-grid');
-    const imgs = (artwork.images || []).slice(0, 4);
+    // Tüm görseller sırayla — admin'in yüklediği sırada (4'ten fazlası alt satıra geçer)
+    const imgs = (artwork.images || []);
     if (imgs.length <= 1) {
       tg.classList.add('hidden');
     } else {
       tg.classList.remove('hidden');
-      tg.className = `grid gap-3 grid-cols-${Math.min(imgs.length, 4)}`;
+      tg.className = 'grid gap-3 grid-cols-4';
       tg.innerHTML = imgs.map((src, i) => `
         <button class="thumb overflow-hidden aspect-square ${i === 0 ? 'ring-1 ring-ink-strong ring-offset-2 ring-offset-bg' : ''}" data-src="${Utils.img(src, 1600)}" aria-label="View image ${i + 1}">
-          <img src="${Utils.img(src, 200)}" alt="${Utils.escapeHTML(artwork.title)} — view ${i + 1}" class="w-full h-full object-cover" />
+          <img src="${Utils.img(src, 300)}" alt="${Utils.escapeHTML(artwork.title)} — view ${i + 1}" class="w-full h-full object-cover" />
         </button>
       `).join('');
       Utils.qsa('.thumb', tg).forEach(b => b.addEventListener('click', () => {

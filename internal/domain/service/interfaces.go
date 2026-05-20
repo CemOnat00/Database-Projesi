@@ -1,6 +1,10 @@
 package service
 
-import "github.com/bscc/go-backend/internal/domain/dto"
+import (
+	"mime/multipart"
+
+	"github.com/bscc/go-backend/internal/domain/dto"
+)
 
 type AuthService interface {
 	Kayit(req *dto.KayitIstegi) (*dto.AuthCevabi, error)
@@ -19,6 +23,9 @@ type EserService interface {
 	Olustur(req *dto.EserOlusturIstegi) (*dto.EserDTO, error)
 	Guncelle(id uint, req *dto.EserGuncelleIstegi) (*dto.EserDTO, error)
 	Sil(id uint) error
+	// Çoklu görsel — dosyaları diske yazar, DB'ye kaydeder
+	GorselleriYukle(eserID uint, dosyalar []*multipart.FileHeader, primaryIndex int) ([]dto.GorselDTO, error)
+	GorselSil(eserID, gorselID uint) error
 }
 
 type SanatciService interface {
@@ -35,6 +42,9 @@ type EtkinlikService interface {
 	Olustur(req *dto.EtkinlikOlusturIstegi) (*dto.EtkinlikDTO, error)
 	Guncelle(id uint, req *dto.EtkinlikGuncelleIstegi) (*dto.EtkinlikDTO, error)
 	Sil(id uint) error
+	// Çoklu görsel — dosyaları diske yazar, DB'ye kaydeder
+	GorselleriYukle(etkinlikID uint, dosyalar []*multipart.FileHeader, primaryIndex int) ([]dto.GorselDTO, error)
+	GorselSil(etkinlikID, gorselID uint) error
 }
 
 type RezervasyonService interface {

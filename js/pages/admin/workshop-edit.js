@@ -1,11 +1,22 @@
 /* ============================================================
    pages/admin/workshop-edit.js — Atölye ekle/düzenle formu
+   • Çoklu görsel: drag-drop + file picker → bilgisayardan dosya seç
+     ▸ Preview grid: "★ Set primary" ve "Remove"
+     ▸ İlk görsel = primary (kapak); detay sayfasında sırayla gösterilir
+   • Submit → etkinliği oluşturur/günceller, ardından dosyaları multipart yükler
    ============================================================ */
 
 (function () {
   'use strict';
 
   let editingId = null;
+
+  // { kind:'file', file, src, primary } | { kind:'existing', id, src, primary }
+  const images = [];
+  const removedExistingIds = [];
+
+  const ACCEPTED = /^image\/(png|jpe?g|webp|gif)$/i;
+  const MAX_SIZE = 5 * 1024 * 1024;
 
   Utils.onReady(async function () {
     if (!Store.User.isAuthed()) {
@@ -27,7 +38,10 @@
       await prefill(editingId);
     }
 
+    bindFilePicker();
+    bindDragDrop();
     bindSubmit();
+    renderPreviewGrid();
   });
 
   async function prefill(id) {
@@ -42,12 +56,133 @@
       if (session.time) form.querySelector('[name="baslangic_saati"]').value = session.time;
       form.querySelector('[name="kontenjan"]').value = w.capacity || 8;
       form.querySelector('[name="ucret"]').value = w.price || 0;
-      form.querySelector('[name="gorsel_url"]').value = w.image || '';
+
+      const ham = w.gorseller || [];
+      if (ham.length > 0) {
+        ham.slice().sort((x, y) => (x.sira || 0) - (y.sira || 0)).forEach(g => {
+          images.push({
+            kind: 'existing',
+            id: g.id,
+            src: GALLERY.mediaURL(g.url),
+            primary: !!g.primary_mi,
+          });
+        });
+      } else if (w.image) {
+        images.push({ kind: 'existing', id: null, src: w.image, primary: true });
+      }
+      if (images.length && !images.some(im => im.primary)) images[0].primary = true;
     } catch (e) {
       console.warn('prefill failed', e);
     }
   }
 
+  /* ---- File picker + drag-drop ---- */
+  function bindFilePicker() {
+    Utils.qs('#img-file').addEventListener('change', e => {
+      handleFiles(Array.from(e.target.files || []));
+      e.target.value = '';
+    });
+  }
+
+  function bindDragDrop() {
+    const zone = Utils.qs('#drop-zone');
+    if (!zone) return;
+    ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => {
+      e.preventDefault();
+      zone.classList.add('border-brand', 'bg-brand/5');
+    }));
+    ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => {
+      e.preventDefault();
+      zone.classList.remove('border-brand', 'bg-brand/5');
+    }));
+    zone.addEventListener('drop', e => {
+      handleFiles(Array.from(e.dataTransfer?.files || []));
+    });
+  }
+
+  function handleFiles(files) {
+    let rejected = 0;
+    files.forEach(f => {
+      if (!ACCEPTED.test(f.type) || f.size > MAX_SIZE) { rejected++; return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        images.push({
+          kind: 'file',
+          file: f,
+          src: reader.result,
+          primary: images.length === 0,
+        });
+        renderPreviewGrid();
+      };
+      reader.readAsDataURL(f);
+    });
+    if (rejected > 0) {
+      Utils.toast(`${rejected} file${rejected > 1 ? 's' : ''} rejected — PNG/JPG/WebP, max 5MB`);
+    }
+  }
+
+  /* ---- Preview grid ---- */
+  function renderPreviewGrid() {
+    const grid = Utils.qs('#img-preview-grid');
+    const count = Utils.qs('#img-count');
+    if (!grid) return;
+
+    if (count) count.textContent = images.length + (images.length === 1 ? ' image' : ' images');
+
+    if (images.length === 0) {
+      grid.classList.add('hidden');
+      grid.innerHTML = '';
+      return;
+    }
+    if (!images.some(im => im.primary)) images[0].primary = true;
+
+    grid.classList.remove('hidden');
+    grid.innerHTML = images.map((im, i) => `
+      <div class="relative border ${im.primary ? 'border-brand ring-2 ring-brand/20' : 'border-line'} bg-bg overflow-hidden">
+        <div class="aspect-square overflow-hidden bg-bg-image">
+          <img src="${Utils.escapeHTML(im.src)}" alt="" class="w-full h-full object-cover" />
+        </div>
+        ${im.primary ? '<span class="absolute top-2 left-2 bg-brand text-white text-[9px] uppercase tracking-lux px-2 py-1">Primary</span>' : ''}
+        <span class="absolute top-2 right-2 bg-bg/90 text-ink-muted text-[9px] uppercase tracking-lux px-2 py-1">${im.kind === 'file' ? 'New' : 'Saved'}</span>
+        <div class="p-2 bg-bg-soft border-t border-line flex items-center justify-between gap-1">
+          ${im.primary
+            ? '<span class="text-[10px] uppercase tracking-lux text-ink-muted">★ Cover</span>'
+            : `<button type="button" data-action="primary" data-idx="${i}" class="text-[10px] uppercase tracking-lux text-brand hover:text-brand-hover">★ Set primary</button>`
+          }
+          <button type="button" data-action="remove" data-idx="${i}" class="text-[10px] uppercase tracking-lux text-accent hover:text-brand">Remove</button>
+        </div>
+      </div>
+    `).join('');
+
+    Utils.qsa('button[data-action]', grid).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.getAttribute('data-idx'));
+        if (btn.getAttribute('data-action') === 'primary') setPrimary(idx);
+        else removeImage(idx);
+      });
+    });
+  }
+
+  function setPrimary(idx) {
+    const [chosen] = images.splice(idx, 1);
+    images.forEach(im => { im.primary = false; });
+    chosen.primary = true;
+    images.unshift(chosen);
+    renderPreviewGrid();
+  }
+
+  function removeImage(idx) {
+    const removed = images[idx];
+    if (removed.kind === 'existing' && removed.id != null) {
+      removedExistingIds.push(removed.id);
+    }
+    const wasPrimary = removed.primary;
+    images.splice(idx, 1);
+    if (wasPrimary && images.length > 0) images[0].primary = true;
+    renderPreviewGrid();
+  }
+
+  /* ---- Submit ---- */
   function bindSubmit() {
     Utils.qs('#workshop-form').addEventListener('submit', async e => {
       e.preventDefault();
@@ -65,28 +200,43 @@
         baslangic_saati: timeStr,
         kontenjan:       Number(data.get('kontenjan')),
         ucret:           Number(data.get('ucret') || 0),
-        gorsel_url:      (data.get('gorsel_url') || '').trim(),
       };
 
       if (!payload.baslik || payload.baslik.length < 2) {
-        showMsg(msg, 'Title is required.', 'accent'); return;
+        return showMsg(msg, 'Title is required.', 'accent');
       }
       if (!payload.etkinlik_tarihi) {
-        showMsg(msg, 'Date is required.', 'accent'); return;
+        return showMsg(msg, 'Date is required.', 'accent');
       }
       if (!(payload.kontenjan >= 1)) {
-        showMsg(msg, 'Capacity must be at least 1.', 'accent'); return;
+        return showMsg(msg, 'Capacity must be at least 1.', 'accent');
+      }
+      if (images.length === 0) {
+        return showMsg(msg, 'Please add at least one image from your computer.', 'accent');
+      }
+
+      const newFiles = images.filter(im => im.kind === 'file').map(im => im.file);
+      let primaryIndex = 0;
+      const primaryItem = images.find(im => im.primary);
+      if (primaryItem && primaryItem.kind === 'file') {
+        primaryIndex = newFiles.indexOf(primaryItem.file);
       }
 
       btn.disabled = true;
       Utils.qs('#submit-label').textContent = 'Saving…';
 
       try {
-        const result = editingId
-          ? await GALLERY.api.adminEtkinlik.guncelle(editingId, payload)
-          : await GALLERY.api.adminEtkinlik.olustur(payload);
-
-        if (!result.ok) throw new Error('Save failed');
+        if (editingId) {
+          for (const gid of removedExistingIds) {
+            if (gid != null) {
+              try { await GALLERY.api.adminEtkinlik.gorselSil(editingId, gid); }
+              catch (err) { console.warn('gorselSil failed', gid, err); }
+            }
+          }
+          await GALLERY.api.adminEtkinlik.guncelle(editingId, payload, newFiles, Math.max(0, primaryIndex));
+        } else {
+          await GALLERY.api.adminEtkinlik.olustur(payload, newFiles, Math.max(0, primaryIndex));
+        }
 
         Utils.toast(editingId ? 'Workshop updated' : 'Workshop created');
         showMsg(msg, (editingId ? 'Updated' : 'Saved') + ' — returning to list…', 'brand');

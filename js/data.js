@@ -20,6 +20,57 @@
     cancellationWindowHours: 48,
   };
 
+  /* ---- mediaURL — backend dosya yolunu tam URL'e çevirir ----
+     Backend "/uploads/..." biçiminde göreli yol döner. <img src>
+     için backend host'unu (http://localhost:8080) öne ekleriz.
+     Zaten http(s):// veya data: ile başlayan değerler dokunulmaz. */
+  function mediaURL(path) {
+    if (!path) return '';
+    if (/^https?:\/\//i.test(path) || path.startsWith('data:')) return path;
+    var host = '';
+    try {
+      host = global.Api.baseURL().replace(/\/api\/v\d+\/?$/i, '');
+    } catch (_) { host = ''; }
+    return host + (path.charAt(0) === '/' ? path : '/' + path);
+  }
+
+  /* ---- Görsel listesi helper'ları --------------------------
+     Backend "gorseller" dizisi döndürür: [{id,url,sira,primary_mi}].
+     Eski kayıtlar yalnızca "gorsel_url" taşıyabilir — geriye uyumluyuz. */
+  function _sortedGorseller(arr) {
+    return (arr || []).slice().sort(function (a, b) {
+      return (a.sira || 0) - (b.sira || 0);
+    });
+  }
+  function eserGorselListesi(e) {
+    if (Array.isArray(e.gorseller) && e.gorseller.length) {
+      return _sortedGorseller(e.gorseller).map(function (g) { return mediaURL(g.url); });
+    }
+    return e.gorsel_url ? [mediaURL(e.gorsel_url)] : [];
+  }
+  function eserAnaGorsel(e) {
+    if (Array.isArray(e.gorseller) && e.gorseller.length) {
+      var sorted = _sortedGorseller(e.gorseller);
+      var prim = sorted.filter(function (g) { return g.primary_mi; })[0] || sorted[0];
+      return mediaURL(prim.url);
+    }
+    return mediaURL(e.gorsel_url || '');
+  }
+  function etkinlikGorselListesi(w) {
+    if (Array.isArray(w.gorseller) && w.gorseller.length) {
+      return _sortedGorseller(w.gorseller).map(function (g) { return mediaURL(g.url); });
+    }
+    return w.gorsel_url ? [mediaURL(w.gorsel_url)] : [];
+  }
+  function etkinlikAnaGorsel(w) {
+    if (Array.isArray(w.gorseller) && w.gorseller.length) {
+      var sorted = _sortedGorseller(w.gorseller);
+      var prim = sorted.filter(function (g) { return g.primary_mi; })[0] || sorted[0];
+      return mediaURL(prim.url);
+    }
+    return mediaURL(w.gorsel_url || '');
+  }
+
   /* ---- Mapper'lar: backend → frontend shape ---------------- */
 
   function mapEser(e) {
@@ -37,8 +88,9 @@
       price: Number(e.fiyat || 0),
       stock: e.stok_adedi,
       sold: stockSold,
-      image: e.gorsel_url || '',
-      images: e.gorsel_url ? [e.gorsel_url] : [],
+      image: eserAnaGorsel(e),
+      images: eserGorselListesi(e),
+      gorseller: Array.isArray(e.gorseller) ? e.gorseller : [], // ham — admin edit için
       category: cat,
       medium: e.kategori || '',
       mediumShort: e.kategori || '',
@@ -81,8 +133,9 @@
       spotsLeft: w.kalan_kontenjan != null ? w.kalan_kontenjan : (w.kontenjan || 0),
       duration: w.sure || '—',
       location: w.lokasyon || 'The Atelier',
-      image: w.gorsel_url || '',
-      images: w.gorsel_url ? [w.gorsel_url] : [],
+      image: etkinlikAnaGorsel(w),
+      images: etkinlikGorselListesi(w),
+      gorseller: Array.isArray(w.gorseller) ? w.gorseller : [], // ham — admin edit için
       sessions: dateObj ? [{ date: dateISO, time, label, dateLong }] : [],
       complimentary: free,
       stats: w.stats || { rating: 0, reviewCount: 0, occupancy: 0 },
@@ -151,8 +204,8 @@
         type: 'artwork',
         refId: d.eser_id,
         title: (d.eser && d.eser.baslik) || ('Artwork #' + d.eser_id),
+        image: d.eser ? eserAnaGorsel(d.eser) : '',
         artist: (d.eser && d.eser.sanatci && d.eser.sanatci.ad_soyad) || '',
-        image: (d.eser && d.eser.gorsel_url) || '',
         price: Number(d.birim_fiyat || 0),
         qty: 1,
       })),
@@ -521,26 +574,69 @@
        açılır, demo bölümü silinir.
        ============================================================ */
     adminEser: {
-      async olustur(payload) {
-        return await global.Api.post('/admin/eserler', payload);
+      // olustur — JSON ile eser oluşturur, ardından files varsa
+      // multipart ile görselleri yükler (eser ID'si dosya klasörü için gerekli).
+      async olustur(payload, files, primaryIndex) {
+        const eser = await global.Api.post('/admin/eserler', payload);
+        const eserID = eser && eser.id;
+        if (eserID && files && files.length) {
+          await api.adminEser.gorselYukle(eserID, files, primaryIndex || 0);
+        }
+        return { ok: true, eser };
       },
-      async guncelle(id, patch) {
-        return await global.Api.put('/admin/eserler/' + id, patch);
+      async guncelle(id, patch, files, primaryIndex) {
+        const eser = await global.Api.put('/admin/eserler/' + id, patch);
+        if (files && files.length) {
+          await api.adminEser.gorselYukle(id, files, primaryIndex || 0);
+        }
+        return { ok: true, eser };
       },
       async sil(id) {
-        return await global.Api.del('/admin/eserler/' + id);
+        await global.Api.del('/admin/eserler/' + id);
+        return { ok: true };
+      },
+      // gorselYukle — bir veya daha fazla File nesnesini multipart ile yükler.
+      async gorselYukle(eserID, files, primaryIndex) {
+        const fd = new FormData();
+        files.forEach(f => fd.append('gorseller', f));
+        fd.append('primary_index', String(primaryIndex || 0));
+        return await global.Api.postForm('/admin/eserler/' + eserID + '/gorseller', fd);
+      },
+      async gorselSil(eserID, gorselID) {
+        await global.Api.del('/admin/eserler/' + eserID + '/gorseller/' + gorselID);
+        return { ok: true };
       },
     },
 
     adminEtkinlik: {
-      async olustur(payload) {
-        return await global.Api.post('/admin/etkinlikler', payload);
+      async olustur(payload, files, primaryIndex) {
+        const etkinlik = await global.Api.post('/admin/etkinlikler', payload);
+        const etkinlikID = etkinlik && etkinlik.id;
+        if (etkinlikID && files && files.length) {
+          await api.adminEtkinlik.gorselYukle(etkinlikID, files, primaryIndex || 0);
+        }
+        return { ok: true, etkinlik };
       },
-      async guncelle(id, patch) {
-        return await global.Api.put('/admin/etkinlikler/' + id, patch);
+      async guncelle(id, patch, files, primaryIndex) {
+        const etkinlik = await global.Api.put('/admin/etkinlikler/' + id, patch);
+        if (files && files.length) {
+          await api.adminEtkinlik.gorselYukle(id, files, primaryIndex || 0);
+        }
+        return { ok: true, etkinlik };
       },
       async sil(id) {
-        return await global.Api.del('/admin/etkinlikler/' + id);
+        await global.Api.del('/admin/etkinlikler/' + id);
+        return { ok: true };
+      },
+      async gorselYukle(etkinlikID, files, primaryIndex) {
+        const fd = new FormData();
+        files.forEach(f => fd.append('gorseller', f));
+        fd.append('primary_index', String(primaryIndex || 0));
+        return await global.Api.postForm('/admin/etkinlikler/' + etkinlikID + '/gorseller', fd);
+      },
+      async gorselSil(etkinlikID, gorselID) {
+        await global.Api.del('/admin/etkinlikler/' + etkinlikID + '/gorseller/' + gorselID);
+        return { ok: true };
       },
     },
 
@@ -562,13 +658,16 @@
         } catch (_) { return null; }
       },
       async olustur(payload) {
-        return await global.Api.post('/admin/sanatcilar', payload);
+        const data = await global.Api.post('/admin/sanatcilar', payload);
+        return { ok: true, data };
       },
       async guncelle(id, patch) {
-        return await global.Api.put('/admin/sanatcilar/' + id, patch);
+        const data = await global.Api.put('/admin/sanatcilar/' + id, patch);
+        return { ok: true, data };
       },
       async sil(id) {
-        return await global.Api.del('/admin/sanatcilar/' + id);
+        await global.Api.del('/admin/sanatcilar/' + id);
+        return { ok: true };
       },
     },
 
@@ -622,6 +721,7 @@
     SITE,
     COUPONS,
     api,
+    mediaURL, // dosya yolu → tam URL (sayfa modülleri için)
     // Backwards-compat helpers (kept synchronous proxies returning Promise)
     getArtwork: (id) => api.getArtwork(id),
     getWorkshop: (id) => api.getWorkshop(id),

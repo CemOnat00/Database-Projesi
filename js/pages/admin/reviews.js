@@ -86,7 +86,7 @@
     Utils.qsa('.admin-reply-save', root).forEach(btn => {
       btn.addEventListener('click', async () => {
         const reviewId = Number(btn.getAttribute('data-review-id'));
-        const card = btn.closest('[data-review-id]');
+        const card = btn.closest('.border-b');
         const input = card.querySelector('.admin-reply-input');
         const text = (input ? input.value : '').trim();
         if (text.length < 5) { Utils.toast('Reply must be at least 5 characters'); return; }

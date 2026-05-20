@@ -17,6 +17,13 @@ type EserRepository interface {
 	Olustur(e *entity.Eser) error
 	Guncelle(e *entity.Eser) error
 	Sil(id uint) error
+	// Çoklu görsel
+	GorselEkle(g *entity.EserGorseli) error
+	GorselGuncelle(g *entity.EserGorseli) error
+	GorselleriListele(eserID uint) ([]*entity.EserGorseli, error)
+	GorselGetir(gorselID uint) (*entity.EserGorseli, error)
+	GorselSil(gorselID uint) error
+	GorselleriTemizle(eserID uint) error
 }
 
 type SanatciRepository interface {
@@ -33,6 +40,13 @@ type EtkinlikRepository interface {
 	Olustur(e *entity.Etkinlik) error
 	Guncelle(e *entity.Etkinlik) error
 	Sil(id uint) error
+	// Çoklu görsel
+	GorselEkle(g *entity.EtkinlikGorseli) error
+	GorselGuncelle(g *entity.EtkinlikGorseli) error
+	GorselleriListele(etkinlikID uint) ([]*entity.EtkinlikGorseli, error)
+	GorselGetir(gorselID uint) (*entity.EtkinlikGorseli, error)
+	GorselSil(gorselID uint) error
+	GorselleriTemizle(etkinlikID uint) error
 }
 
 type RezervasyonRepository interface {

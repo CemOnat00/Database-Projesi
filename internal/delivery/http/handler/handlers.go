@@ -166,6 +166,57 @@ func (h *EserHandler) Sil(c *gin.Context) {
 	response.OK(c, "eser silindi", nil)
 }
 
+// GorselYukle — multipart/form-data ile bir veya daha fazla görsel yükler.
+// Form alanı: "gorseller" (çoklu dosya), "primary_index" (opsiyonel).
+func (h *EserHandler) GorselYukle(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	form, err := c.MultipartForm()
+	if err != nil {
+		response.ValidationError(c, "multipart form okunamadı")
+		return
+	}
+	dosyalar := form.File["gorseller"]
+	if len(dosyalar) == 0 {
+		response.ValidationError(c, "en az bir görsel gönderilmeli")
+		return
+	}
+	primaryIndex := 0
+	if pi := c.PostForm("primary_index"); pi != "" {
+		if n, e := strconv.Atoi(pi); e == nil {
+			primaryIndex = n
+		}
+	}
+	sonuc, err := h.svc.GorselleriYukle(id, dosyalar, primaryIndex)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.Created(c, "görseller yüklendi", gin.H{"gorseller": sonuc})
+}
+
+// GorselSil — bir eser görselini siler.
+func (h *EserHandler) GorselSil(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	gid, gerr := strconv.ParseUint(c.Param("gid"), 10, 32)
+	if gerr != nil {
+		response.Error(c, apperror.BadRequest("geçersiz görsel ID"))
+		return
+	}
+	if err := h.svc.GorselSil(id, uint(gid)); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "görsel silindi", nil)
+}
+
 // ── Sanatçı Handler ───────────────────────────────────────────────────────────
 
 type SanatciHandler struct{ svc domainsvc.SanatciService }
@@ -316,6 +367,56 @@ func (h *EtkinlikHandler) Sil(c *gin.Context) {
 		return
 	}
 	response.OK(c, "etkinlik silindi", nil)
+}
+
+// GorselYukle — multipart/form-data ile bir veya daha fazla görsel yükler.
+func (h *EtkinlikHandler) GorselYukle(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	form, err := c.MultipartForm()
+	if err != nil {
+		response.ValidationError(c, "multipart form okunamadı")
+		return
+	}
+	dosyalar := form.File["gorseller"]
+	if len(dosyalar) == 0 {
+		response.ValidationError(c, "en az bir görsel gönderilmeli")
+		return
+	}
+	primaryIndex := 0
+	if pi := c.PostForm("primary_index"); pi != "" {
+		if n, e := strconv.Atoi(pi); e == nil {
+			primaryIndex = n
+		}
+	}
+	sonuc, err := h.svc.GorselleriYukle(id, dosyalar, primaryIndex)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.Created(c, "görseller yüklendi", gin.H{"gorseller": sonuc})
+}
+
+// GorselSil — bir etkinlik görselini siler.
+func (h *EtkinlikHandler) GorselSil(c *gin.Context) {
+	id, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	gid, gerr := strconv.ParseUint(c.Param("gid"), 10, 32)
+	if gerr != nil {
+		response.Error(c, apperror.BadRequest("geçersiz görsel ID"))
+		return
+	}
+	if err := h.svc.GorselSil(id, uint(gid)); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "görsel silindi", nil)
 }
 
 // ── Rezervasyon Handler ───────────────────────────────────────────────────────

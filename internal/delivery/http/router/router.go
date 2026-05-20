@@ -37,6 +37,9 @@ func Kur(
 		c.JSON(http.StatusOK, gin.H{"durum": "çalışıyor"})
 	})
 
+	// Yüklenen görseller — statik sunum (admin'in yüklediği eser/etkinlik görselleri)
+	r.Static("/uploads", "./uploads")
+
 	api := r.Group("/api/v1")
 
 	// ── Herkese açık ─────────────────────────────────────────────────────────
@@ -135,11 +138,17 @@ func Kur(
 			admin.POST("/eserler", eserH.Olustur)
 			admin.PUT("/eserler/:id", eserH.Guncelle)
 			admin.DELETE("/eserler/:id", eserH.Sil)
+			// Eser çoklu görsel
+			admin.POST("/eserler/:id/gorseller", eserH.GorselYukle)
+			admin.DELETE("/eserler/:id/gorseller/:gid", eserH.GorselSil)
 
 			// Etkinlik CRUD
 			admin.POST("/etkinlikler", etkinlikH.Olustur)
 			admin.PUT("/etkinlikler/:id", etkinlikH.Guncelle)
 			admin.DELETE("/etkinlikler/:id", etkinlikH.Sil)
+			// Etkinlik çoklu görsel
+			admin.POST("/etkinlikler/:id/gorseller", etkinlikH.GorselYukle)
+			admin.DELETE("/etkinlikler/:id/gorseller/:gid", etkinlikH.GorselSil)
 
 			// Sanatçı CRUD
 			admin.POST("/sanatcilar", sanatciH.Olustur)

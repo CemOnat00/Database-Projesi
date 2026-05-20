@@ -32,17 +32,31 @@ type Eser struct {
 	SanatciID     uint      `gorm:"column:sanatci_id;not null"              json:"sanatci_id"`
 	Baslik        string    `gorm:"column:baslik;not null;size:200"         json:"baslik"`
 	Aciklama      string    `gorm:"column:aciklama;type:text"               json:"aciklama"`
-	GorselURL     string    `gorm:"column:gorsel_url;size:255"              json:"gorsel_url"`
+	GorselURL     string    `gorm:"column:gorsel_url;size:500"              json:"gorsel_url"`
 	Kategori      string    `gorm:"column:kategori;size:100"                json:"kategori"`
 	Fiyat         float64   `gorm:"column:fiyat;type:numeric(10,2)"         json:"fiyat"`
 	StokAdedi     int       `gorm:"column:stok_adedi"                       json:"stok_adedi"`
 	EklenmeTarihi time.Time `gorm:"column:eklenme_tarihi;autoCreateTime"    json:"eklenme_tarihi"`
 
 	// İlişkiler
-	Sanatci Sanatci `gorm:"foreignKey:SanatciID" json:"sanatci,omitempty"`
+	Sanatci  Sanatci       `gorm:"foreignKey:SanatciID"                  json:"sanatci,omitempty"`
+	Gorseller []EserGorseli `gorm:"foreignKey:EserID;constraint:OnDelete:CASCADE" json:"gorseller,omitempty"`
 }
 
 func (Eser) TableName() string { return "eserler" }
+
+// ── Eser görselleri (çoklu görsel desteği) ────────────────────────────────────
+
+type EserGorseli struct {
+	ID            uint      `gorm:"primaryKey;autoIncrement"             json:"id"`
+	EserID        uint      `gorm:"column:eser_id;not null;index"        json:"eser_id"`
+	DosyaYolu     string    `gorm:"column:dosya_yolu;not null;size:500"  json:"dosya_yolu"`
+	Sira          int       `gorm:"column:sira;default:0"                json:"sira"`
+	PrimaryMi     bool      `gorm:"column:primary_mi;default:false"      json:"primary_mi"`
+	EklenmeTarihi time.Time `gorm:"column:eklenme_tarihi;autoCreateTime" json:"eklenme_tarihi"`
+}
+
+func (EserGorseli) TableName() string { return "eser_gorselleri" }
 
 // ── Etkinlikler ───────────────────────────────────────────────────────────────
 
@@ -50,15 +64,31 @@ type Etkinlik struct {
 	ID             uint      `gorm:"primaryKey;autoIncrement"                   json:"id"`
 	Baslik         string    `gorm:"column:baslik;not null;size:200"            json:"baslik"`
 	Aciklama       string    `gorm:"column:aciklama;type:text"                  json:"aciklama"`
-	GorselURL      string    `gorm:"column:gorsel_url;size:255"                 json:"gorsel_url"`
+	GorselURL      string    `gorm:"column:gorsel_url;size:500"                 json:"gorsel_url"`
 	EtkinlikTarihi time.Time `gorm:"column:etkinlik_tarihi"                     json:"etkinlik_tarihi"`
 	BaslangicSaati string    `gorm:"column:baslangic_saati"                     json:"baslangic_saati"`
 	Kontenjan      int       `gorm:"column:kontenjan"                           json:"kontenjan"`
 	Ucret          float64   `gorm:"column:ucret;type:numeric(10,2)"            json:"ucret"`
 	EklenmeTarihi  time.Time `gorm:"column:eklenme_tarihi;autoCreateTime"       json:"eklenme_tarihi"`
+
+	// İlişkiler
+	Gorseller []EtkinlikGorseli `gorm:"foreignKey:EtkinlikID;constraint:OnDelete:CASCADE" json:"gorseller,omitempty"`
 }
 
 func (Etkinlik) TableName() string { return "etkinlikler" }
+
+// ── Etkinlik görselleri (çoklu görsel desteği) ────────────────────────────────
+
+type EtkinlikGorseli struct {
+	ID            uint      `gorm:"primaryKey;autoIncrement"             json:"id"`
+	EtkinlikID    uint      `gorm:"column:etkinlik_id;not null;index"    json:"etkinlik_id"`
+	DosyaYolu     string    `gorm:"column:dosya_yolu;not null;size:500"  json:"dosya_yolu"`
+	Sira          int       `gorm:"column:sira;default:0"                json:"sira"`
+	PrimaryMi     bool      `gorm:"column:primary_mi;default:false"      json:"primary_mi"`
+	EklenmeTarihi time.Time `gorm:"column:eklenme_tarihi;autoCreateTime" json:"eklenme_tarihi"`
+}
+
+func (EtkinlikGorseli) TableName() string { return "etkinlik_gorselleri" }
 
 // ── Rezervasyonlar ────────────────────────────────────────────────────────────
 

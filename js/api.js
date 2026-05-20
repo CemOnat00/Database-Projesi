@@ -26,7 +26,10 @@
     if (tk) headers['Authorization'] = 'Bearer ' + tk;
 
     let payload = undefined;
-    if (body !== undefined && body !== null) {
+    if (body instanceof FormData) {
+      // multipart/form-data — Content-Type'ı browser boundary ile ayarlar
+      payload = body;
+    } else if (body !== undefined && body !== null) {
       headers['Content-Type'] = 'application/json';
       payload = JSON.stringify(body);
     }
@@ -79,10 +82,12 @@
   global.Api = {
     baseURL,
     token,
-    get:    (path, opts)        => request('GET',    path, undefined, opts),
-    post:   (path, body, opts)  => request('POST',   path, body,      opts),
-    put:    (path, body, opts)  => request('PUT',    path, body,      opts),
-    del:    (path, opts)        => request('DELETE', path, undefined, opts),
+    get:     (path, opts)        => request('GET',    path, undefined, opts),
+    post:    (path, body, opts)  => request('POST',   path, body,      opts),
+    put:     (path, body, opts)  => request('PUT',    path, body,      opts),
+    del:     (path, opts)        => request('DELETE', path, undefined, opts),
+    // postForm — FormData (multipart) gönderir; dosya yüklemeleri için.
+    postForm: (path, formData, opts) => request('POST', path, formData, opts),
     isAuthed: () => !!token(),
   };
 })(window);

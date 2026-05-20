@@ -162,8 +162,29 @@
   }
 
   function bindExport() {
-    Utils.qs('#export-btn')?.addEventListener('click', () => {
-      Utils.toast('CSV export — endpoint not enabled on this backend');
+    Utils.qs('#export-btn')?.addEventListener('click', async () => {
+      try {
+        const orders = await GALLERY.api.adminListele.siparisler();
+        let csv = 'Order ID,Customer Name,Customer Email,Items Count,Payment,Date,Total,Status\n';
+        orders.forEach(o => {
+          const custName = (o.customer?.name || '').replace(/"/g, '""');
+          const custEmail = (o.customer?.email || '').replace(/"/g, '""');
+          csv += `${o.id},"${custName}","${custEmail}",${(o.items||[]).length},${o.paymentMethod},${o.date},${o.total},${o.status}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'gallery_orders_export.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        Utils.toast('CSV exported successfully');
+      } catch (e) {
+        console.warn('CSV export error:', e);
+        Utils.toast('Could not export CSV data');
+      }
     });
   }
 })();

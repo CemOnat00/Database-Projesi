@@ -62,7 +62,7 @@
     Utils.qsa('.ar-delete', tbody).forEach(b => b.addEventListener('click', async () => {
       const id = b.getAttribute('data-id');
       const name = b.getAttribute('data-name');
-      if (!confirm(`Delete "${name}"? Their artworks will lose their author reference.`)) return;
+      if (!confirm(`Delete "${name}"? This cannot be undone. (Artists that still have artworks cannot be removed — delete their artworks first.)`)) return;
       try {
         const result = await GALLERY.api.adminSanatci.sil(id);
         if (!result.ok) throw new Error('Delete failed');

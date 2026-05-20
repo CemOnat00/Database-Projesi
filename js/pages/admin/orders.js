@@ -46,7 +46,6 @@
           <td class="text-ink-muted">${Utils.escapeHTML(o.date || '')}</td>
           <td class="text-right">${Utils.fmtMoney(o.total || 0)}</td>
           <td class="pl-3"><span class="text-[10px] uppercase tracking-lux ${statusClass} border px-2 py-1">${Utils.escapeHTML(o.status || '—')}</span></td>
-          <td class="text-right pr-5"><a href="../confirmation.html?id=${encodeURIComponent(o.id)}" class="text-[11px] uppercase tracking-lux border-b border-ink-strong/30 hover:border-brand">View</a></td>
         </tr>`;
     }).join('');
   });

@@ -1,6 +1,10 @@
 package service
 
 import (
+	"mime/multipart"
+	"path/filepath"
+	"strconv"
+
 	"github.com/bscc/go-backend/internal/domain/dto"
 	"github.com/bscc/go-backend/internal/domain/entity"
 	domainrepo "github.com/bscc/go-backend/internal/domain/repository"
@@ -8,6 +12,7 @@ import (
 	"github.com/bscc/go-backend/internal/pkg/apperror"
 	"github.com/bscc/go-backend/internal/pkg/jwt"
 	"github.com/bscc/go-backend/internal/pkg/password"
+	"github.com/bscc/go-backend/internal/pkg/upload"
 	"gorm.io/gorm"
 )
 
@@ -27,6 +32,12 @@ func eserDTO(e *entity.Eser) *dto.EserDTO {
 	if e == nil {
 		return nil
 	}
+	gorseller := make([]dto.GorselDTO, 0, len(e.Gorseller))
+	for _, g := range e.Gorseller {
+		gorseller = append(gorseller, dto.GorselDTO{
+			ID: g.ID, URL: g.DosyaYolu, Sira: g.Sira, PrimaryMi: g.PrimaryMi,
+		})
+	}
 	return &dto.EserDTO{
 		ID: e.ID, Baslik: e.Baslik, Aciklama: e.Aciklama,
 		GorselURL: e.GorselURL, Kategori: e.Kategori,
@@ -34,12 +45,19 @@ func eserDTO(e *entity.Eser) *dto.EserDTO {
 		Sanatci: dto.SanatciDTO{
 			ID: e.Sanatci.ID, AdSoyad: e.Sanatci.AdSoyad, Biyografi: e.Sanatci.Biyografi,
 		},
+		Gorseller: gorseller,
 	}
 }
 
 func etkinlikDTO(e *entity.Etkinlik) *dto.EtkinlikDTO {
 	if e == nil {
 		return nil
+	}
+	gorseller := make([]dto.GorselDTO, 0, len(e.Gorseller))
+	for _, g := range e.Gorseller {
+		gorseller = append(gorseller, dto.GorselDTO{
+			ID: g.ID, URL: g.DosyaYolu, Sira: g.Sira, PrimaryMi: g.PrimaryMi,
+		})
 	}
 	return &dto.EtkinlikDTO{
 		ID:             e.ID,
@@ -50,6 +68,7 @@ func etkinlikDTO(e *entity.Etkinlik) *dto.EtkinlikDTO {
 		BaslangicSaati: e.BaslangicSaati,
 		Kontenjan:      e.Kontenjan,
 		Ucret:          e.Ucret,
+		Gorseller:      gorseller,
 	}
 }
 
@@ -247,7 +266,88 @@ func (s *EserServiceImpl) Guncelle(id uint, req *dto.EserGuncelleIstegi) (*dto.E
 }
 
 func (s *EserServiceImpl) Sil(id uint) error {
+	// Önce diskteki görselleri temizle
+	if gorseller, err := s.repo.GorselleriListele(id); err == nil {
+		for _, g := range gorseller {
+			_ = upload.Sil(g.DosyaYolu)
+		}
+	}
 	return s.repo.Sil(id)
+}
+
+// GorselleriYukle — multipart dosyalarını diske yazar, eser_gorselleri
+// tablosuna kaydeder ve eserin ana görselini (gorsel_url) primary olana ayarlar.
+func (s *EserServiceImpl) GorselleriYukle(eserID uint, dosyalar []*multipart.FileHeader, primaryIndex int) ([]dto.GorselDTO, error) {
+	eser, err := s.repo.IDileGetir(eserID)
+	if err != nil {
+		return nil, err
+	}
+
+	mevcut, _ := s.repo.GorselleriListele(eserID)
+	basSira := len(mevcut)
+	primaryVarMi := false
+	for _, g := range mevcut {
+		if g.PrimaryMi {
+			primaryVarMi = true
+			break
+		}
+	}
+
+	altKlasor := filepath.Join("eserler", strconv.FormatUint(uint64(eserID), 10))
+	sonuc := make([]dto.GorselDTO, 0, len(dosyalar))
+
+	for i, dosya := range dosyalar {
+		if ok, mesaj := upload.GecerliMi(dosya); !ok {
+			return nil, apperror.BadRequest(mesaj)
+		}
+		yol, err := upload.Kaydet(dosya, altKlasor)
+		if err != nil {
+			return nil, apperror.Internal("görsel kaydedilemedi", err)
+		}
+		primary := (!primaryVarMi && i == primaryIndex)
+		g := &entity.EserGorseli{
+			EserID: eserID, DosyaYolu: yol,
+			Sira: basSira + i, PrimaryMi: primary,
+		}
+		if err := s.repo.GorselEkle(g); err != nil {
+			return nil, err
+		}
+		if primary {
+			eser.GorselURL = yol
+			_ = s.repo.Guncelle(eser)
+		}
+		sonuc = append(sonuc, dto.GorselDTO{
+			ID: g.ID, URL: g.DosyaYolu, Sira: g.Sira, PrimaryMi: g.PrimaryMi,
+		})
+	}
+	return sonuc, nil
+}
+
+func (s *EserServiceImpl) GorselSil(eserID, gorselID uint) error {
+	g, err := s.repo.GorselGetir(gorselID)
+	if err != nil {
+		return err
+	}
+	if g.EserID != eserID {
+		return apperror.BadRequest("görsel bu esere ait değil")
+	}
+	_ = upload.Sil(g.DosyaYolu)
+	if err := s.repo.GorselSil(gorselID); err != nil {
+		return err
+	}
+	// Silinen görsel primary ise, kalan ilk görseli primary yap
+	if g.PrimaryMi {
+		kalan, _ := s.repo.GorselleriListele(eserID)
+		if len(kalan) > 0 {
+			kalan[0].PrimaryMi = true
+			_ = s.repo.GorselGuncelle(kalan[0])
+			if eser, err := s.repo.IDileGetir(eserID); err == nil {
+				eser.GorselURL = kalan[0].DosyaYolu
+				_ = s.repo.Guncelle(eser)
+			}
+		}
+	}
+	return nil
 }
 
 // ── Sanatçı Service ───────────────────────────────────────────────────────────
@@ -395,7 +495,86 @@ func (s *EtkinlikServiceImpl) Guncelle(id uint, req *dto.EtkinlikGuncelleIstegi)
 }
 
 func (s *EtkinlikServiceImpl) Sil(id uint) error {
+	if gorseller, err := s.repo.GorselleriListele(id); err == nil {
+		for _, g := range gorseller {
+			_ = upload.Sil(g.DosyaYolu)
+		}
+	}
 	return s.repo.Sil(id)
+}
+
+// GorselleriYukle — multipart dosyalarını diske yazar, etkinlik_gorselleri
+// tablosuna kaydeder ve etkinliğin ana görselini (gorsel_url) primary olana ayarlar.
+func (s *EtkinlikServiceImpl) GorselleriYukle(etkinlikID uint, dosyalar []*multipart.FileHeader, primaryIndex int) ([]dto.GorselDTO, error) {
+	etkinlik, err := s.repo.IDileGetir(etkinlikID)
+	if err != nil {
+		return nil, err
+	}
+
+	mevcut, _ := s.repo.GorselleriListele(etkinlikID)
+	basSira := len(mevcut)
+	primaryVarMi := false
+	for _, g := range mevcut {
+		if g.PrimaryMi {
+			primaryVarMi = true
+			break
+		}
+	}
+
+	altKlasor := filepath.Join("etkinlikler", strconv.FormatUint(uint64(etkinlikID), 10))
+	sonuc := make([]dto.GorselDTO, 0, len(dosyalar))
+
+	for i, dosya := range dosyalar {
+		if ok, mesaj := upload.GecerliMi(dosya); !ok {
+			return nil, apperror.BadRequest(mesaj)
+		}
+		yol, err := upload.Kaydet(dosya, altKlasor)
+		if err != nil {
+			return nil, apperror.Internal("görsel kaydedilemedi", err)
+		}
+		primary := (!primaryVarMi && i == primaryIndex)
+		g := &entity.EtkinlikGorseli{
+			EtkinlikID: etkinlikID, DosyaYolu: yol,
+			Sira: basSira + i, PrimaryMi: primary,
+		}
+		if err := s.repo.GorselEkle(g); err != nil {
+			return nil, err
+		}
+		if primary {
+			etkinlik.GorselURL = yol
+			_ = s.repo.Guncelle(etkinlik)
+		}
+		sonuc = append(sonuc, dto.GorselDTO{
+			ID: g.ID, URL: g.DosyaYolu, Sira: g.Sira, PrimaryMi: g.PrimaryMi,
+		})
+	}
+	return sonuc, nil
+}
+
+func (s *EtkinlikServiceImpl) GorselSil(etkinlikID, gorselID uint) error {
+	g, err := s.repo.GorselGetir(gorselID)
+	if err != nil {
+		return err
+	}
+	if g.EtkinlikID != etkinlikID {
+		return apperror.BadRequest("görsel bu etkinliğe ait değil")
+	}
+	_ = upload.Sil(g.DosyaYolu)
+	if err := s.repo.GorselSil(gorselID); err != nil {
+		return err
+	}
+	if g.PrimaryMi {
+		kalan, _ := s.repo.GorselleriListele(etkinlikID)
+		if len(kalan) > 0 {
+			kalan[0].PrimaryMi = true
+			_ = s.repo.GorselGuncelle(kalan[0])
+			if etkinlik, err := s.repo.IDileGetir(etkinlikID); err == nil {
+				etkinlik.GorselURL = kalan[0].DosyaYolu
+				_ = s.repo.Guncelle(etkinlik)
+			}
+		}
+	}
+	return nil
 }
 
 // ── Rezervasyon Service ───────────────────────────────────────────────────────
@@ -691,11 +870,20 @@ func (s *YorumServiceImpl) Listele(referansID uint, referansTipi string, siralam
 
 	result := make([]*dto.YorumDTO, 0, len(yorumlar))
 	for _, y := range yorumlar {
+		yanitlar := make([]dto.YorumYanitiDTO, 0, len(y.Yanitlar))
+		for _, yn := range y.Yanitlar {
+			yanitlar = append(yanitlar, dto.YorumYanitiDTO{
+				ID:              yn.ID,
+				YanitMetni:      yn.YanitMetni,
+				OlusturmaTarihi: yn.OlusturmaTarihi,
+			})
+		}
 		result = append(result, &dto.YorumDTO{
 			ID: y.ID, Puan: y.Puan, Metin: y.Metin,
 			FaydalıOySayisi: y.FaydalıOySayisi, DogrulanmisMi: y.DogrulanmisMi,
 			OlusturmaTarihi: y.OlusturmaTarihi,
 			Kullanici:       kullaniciDTO(&y.Kullanici),
+			Yanitlar:        yanitlar,
 		})
 	}
 
