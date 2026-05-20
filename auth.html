@@ -76,20 +76,20 @@
 
           <div>
             <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Full Name</label>
-            <input name="name" type="text" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+            <input name="name" type="text" required autocomplete="name" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
           </div>
           <div>
             <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Email</label>
-            <input name="email" type="email" required class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+            <input name="email" type="email" required autocomplete="email" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
           </div>
           <div class="grid grid-cols-2 gap-5">
             <div>
               <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Password</label>
-              <input name="password" type="password" required minlength="8" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+              <input name="password" type="password" required minlength="6" autocomplete="new-password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
             </div>
             <div>
               <label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Confirm</label>
-              <input name="password2" type="password" required minlength="8" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
+              <input name="password2" type="password" required minlength="6" autocomplete="new-password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" />
             </div>
           </div>
           <label class="flex items-start gap-2 text-[11px] tracking-wide text-ink-muted cursor-pointer">

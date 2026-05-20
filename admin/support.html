@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support Tickets — The Curated Gallery · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet" />
+  <script src="../js/config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    /* Custom scrollbar for chat pane */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: var(--color-line, #e2e8f0);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body data-nav="admin" data-active="support" class="min-h-screen bg-bg text-ink">
+
+  <div id="navbar-root"></div>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+
+    <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div>
+        <p class="text-[11px] uppercase tracking-lux text-ink-muted mb-3">Customer Service</p>
+        <h1 class="font-display text-5xl text-ink-strong">Support Requests</h1>
+        <p class="mt-3 text-sm text-ink-muted">View, manage, and reply to client inquiries.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-ink-muted">Status Filter:</span>
+        <select id="status-filter" class="bg-surface border border-line px-3 py-1.5 text-xs text-ink-strong focus:outline-none focus:border-ink-strong">
+          <option value="all">All Statuses</option>
+          <option value="acik">Open</option>
+          <option value="kapali">Closed</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left side: Tickets list -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        <div class="bg-surface border border-line p-4 flex items-center gap-2">
+          <svg class="text-ink-muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-tickets" placeholder="Search by topic or customer name..." class="bg-transparent border-none w-full text-sm focus:outline-none text-ink-strong placeholder-ink-muted/60" />
+        </div>
+
+        <div id="tickets-list" class="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-1">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div id="tickets-empty" class="hidden text-center bg-surface border border-line border-dashed py-12 px-4">
+          <p class="font-display italic text-lg text-ink-strong">No tickets found.</p>
+          <p class="text-xs text-ink-muted mt-2">Adjust your filters or query.</p>
+        </div>
+      </div>
+
+      <!-- Right side: Ticket detail and chat -->
+      <div class="lg:col-span-7">
+        <div id="detail-panel-empty" class="bg-surface border border-line py-32 px-6 text-center flex flex-col items-center justify-center min-h-[500px]">
+          <div class="w-16 h-16 rounded-full bg-bg-soft flex items-center justify-center mb-6 text-ink-muted">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3 class="font-display text-2xl text-ink-strong">No Ticket Selected</h3>
+          <p class="mt-3 text-sm text-ink-muted max-w-sm">Select a support ticket from the list on the left to see customer details, request message, and to send a reply.</p>
+        </div>
+
+        <div id="detail-panel" class="hidden bg-surface border border-line flex flex-col min-h-[500px]">
+          <!-- Ticket Header -->
+          <div class="p-6 border-b border-line bg-bg-soft flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <span id="detail-ticket-id" class="text-xs font-mono text-ink-muted">TICKET #0</span>
+                <span id="detail-ticket-status" class="text-[10px] uppercase tracking-lux border px-2 py-0.5 rounded-none font-medium">OPEN</span>
+              </div>
+              <h2 id="detail-ticket-subject" class="font-display text-2xl text-ink-strong leading-tight">Ticket Subject</h2>
+              
+              <!-- Customer info -->
+              <div class="mt-4 flex items-center gap-3">
+                <div class="w-9 h-9 bg-ink-strong/5 rounded-full flex items-center justify-center text-xs font-semibold text-ink-strong" id="detail-customer-avatar">
+                  U
+                </div>
+                <div>
+                  <div id="detail-customer-name" class="text-sm font-medium text-ink-strong">Customer Name</div>
+                  <div id="detail-customer-email" class="text-xs text-ink-muted">customer@email.com</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button id="toggle-status-btn" class="bg-surface hover:bg-bg border border-line text-xs font-medium px-4 py-2 transition-all text-ink-strong">
+                Close Ticket
+              </button>
+            </div>
+          </div>
+
+          <!-- Original Message (Customer input) -->
+          <div class="p-6 bg-surface border-b border-line">
+            <h4 class="text-[10px] uppercase tracking-lux text-ink-muted mb-2">Original Request</h4>
+            <div id="detail-ticket-message" class="text-sm text-ink-strong bg-bg-soft p-4 border border-line italic leading-relaxed whitespace-pre-wrap">
+              Customer message text...
+            </div>
+            <div id="detail-ticket-date" class="text-[10px] text-ink-muted mt-2 text-right">Date sent</div>
+          </div>
+
+          <!-- Reply Chat Container -->
+          <div id="chat-messages-container" class="flex-grow p-6 bg-bg/25 max-h-[300px] overflow-y-auto custom-scroll flex flex-col gap-4">
+            <!-- Dynamically populated chat bubbles -->
+          </div>
+
+          <!-- Quick Actions & Reply Form -->
+          <div class="p-6 border-t border-line bg-bg-soft">
+            <form id="reply-form" class="space-y-4">
+              <div>
+                <label for="reply-text" class="block text-[10px] uppercase tracking-lux text-ink-muted mb-2">Write a Response</label>
+                <textarea id="reply-text" rows="4" required placeholder="Type your response to the customer here..." class="w-full bg-surface border border-line p-4 text-sm text-ink-strong placeholder-ink-muted/50 focus:outline-none focus:border-ink-strong focus:ring-1 focus:ring-ink-strong transition-all resize-none"></textarea>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-ink-muted">Replies will be sent instantly.</span>
+                <button type="submit" class="bg-ink-strong text-bg hover:bg-ink-strong/90 text-sm font-medium px-6 py-2.5 transition-all">
+                  Send Response
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="../js/components.js"></script>
+  <script src="../js/pages/admin/support.js"></script>
+</body>
+</html>

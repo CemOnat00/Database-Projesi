@@ -188,6 +188,8 @@
         icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` },
       { key: 'users',        label: 'Users',           href: 'users.html',
         icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+      { key: 'support',      label: 'Support',         href: 'support.html',
+        icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>` },
     ];
 
     root.innerHTML = `
@@ -297,6 +299,11 @@
         badge.textContent = n;
         badge.classList.toggle('hidden', n === 0);
       });
+
+      // Background sync favorites if authed
+      if (Store.User.isAuthed() && global.GALLERY && GALLERY.api && GALLERY.api.favorites) {
+        GALLERY.api.favorites.list().catch(e => console.warn('Could not sync favorites:', e));
+      }
     }
   });
 

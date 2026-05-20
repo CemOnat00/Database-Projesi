@@ -77,6 +77,8 @@
     set('input[name="email"]',     user.email);
     set('input[name="phone"]',     user.phone);
     set('input[name="address"]',   user.address);
+    // Pre-fill hidden username for password manager in security form
+    set('#security-form input[name="username"]', user.email);
   }
 
   function bindSidebar() {
@@ -482,31 +484,38 @@
 
     Utils.qs('#security-form')?.addEventListener('submit', async e => {
       e.preventDefault();
-      const inputs = e.target.querySelectorAll('input[type=password]');
-      const current = inputs[0].value;
-      const next = inputs[1].value;
-      const confirm = inputs[2].value;
+      const data = new FormData(e.target);
+      const current = data.get('current_password') || '';
+      const next = data.get('new_password') || '';
+      const confirmPw = data.get('confirm_password') || '';
       let msg = e.target.querySelector('.form-msg');
       if (!msg) {
         msg = document.createElement('p');
         msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux min-h-[1rem]';
         e.target.insertBefore(msg, e.target.querySelector('button').parentElement);
       }
+      if (!current) { msg.textContent = 'Please enter your current password.'; msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-accent min-h-[1rem]'; return; }
       if (next.length < 6) { msg.textContent = 'New password must be at least 6 characters.'; msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-accent min-h-[1rem]'; return; }
-      if (next !== confirm) { msg.textContent = 'New passwords do not match.'; msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-accent min-h-[1rem]'; return; }
+      if (next !== confirmPw) { msg.textContent = 'New passwords do not match.'; msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-accent min-h-[1rem]'; return; }
+      if (current === next) { msg.textContent = 'New password must be different from current password.'; msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-accent min-h-[1rem]'; return; }
 
-      const result = await GALLERY.api.changePassword(current, next);
-      if (!result.ok) {
-        if (result.error === 'wrong_password') msg.textContent = 'Current password is incorrect.';
-        else if (result.error === 'weak_password') msg.textContent = 'Password must be at least 6 characters.';
-        else msg.textContent = 'Could not update password.';
+      try {
+        const result = await GALLERY.api.changePassword(current, next);
+        if (!result.ok) {
+          if (result.error === 'wrong_password') msg.textContent = 'Current password is incorrect.';
+          else if (result.error === 'weak_password') msg.textContent = 'Password must be at least 6 characters.';
+          else msg.textContent = 'Could not update password.';
+          msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-accent min-h-[1rem]';
+          return;
+        }
+        msg.textContent = 'Password updated successfully.';
+        msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-brand min-h-[1rem]';
+        Utils.toast('Password updated');
+        e.target.reset();
+      } catch (err) {
+        msg.textContent = err.message || 'Could not update password.';
         msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-accent min-h-[1rem]';
-        return;
       }
-      msg.textContent = 'Password updated successfully.';
-      msg.className = 'form-msg md:col-span-2 text-[11px] uppercase tracking-lux text-brand min-h-[1rem]';
-      Utils.toast('Password updated');
-      e.target.reset();
     });
 
     Utils.qs('#signout-btn')?.addEventListener('click', async () => {

@@ -140,7 +140,11 @@
         Utils.toast(e.message || 'Could not update favorite');
       }
     });
-    Store.subscribe('favorites', updateFavButton);
+    Store.subscribe('favorites', (list) => {
+      const ids = Array.isArray(list) ? list.map(Number) : Store.Favorites.list().map(Number);
+      isFavorite = ids.includes(Number(artwork.id));
+      updateFavButton();
+    });
 
     Utils.qs('#add-cart-btn').addEventListener('click', () => {
       if (artwork.sold) { Utils.toast('This work is sold.'); return; }

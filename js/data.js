@@ -215,8 +215,11 @@
 
   function mapFavori(f) {
     if (!f) return null;
-    const e = mapEser(f.eser) || { id: f.eser_id };
-    e._favoriteSince = f.eklenme_tarihi;
+    const rawEser = f.eser || (f.id ? f : null);
+    const e = mapEser(rawEser) || { id: f.eser_id || f.id };
+    if (e) {
+      e._favoriteSince = f.eklenme_tarihi || (rawEser && rawEser.eklenme_tarihi);
+    }
     return e;
   }
 
@@ -224,6 +227,9 @@
     if (!t) return null;
     return {
       id: t.id,
+      userId: t.kullanici_id,
+      userName: t.kullanici ? t.kullanici.ad_soyad : '',
+      userEmail: t.kullanici ? t.kullanici.email : '',
       subject: t.konu || '',
       message: t.mesaj || '',
       status: capStatus(t.durum),
@@ -404,14 +410,40 @@
     /* ---- Favorites ---- */
     favorites: {
       async list() {
-        const data = await global.Api.get('/favoriler');
-        const arr = (data && data.favoriler) || (Array.isArray(data) ? data : []);
-        return arr.map(f => f.eser_id || (f.eser && f.eser.id) || f.id);
+        try {
+          const data = await global.Api.get('/favoriler');
+          const arr = (data && data.favoriler) || (Array.isArray(data) ? data : []);
+          const ids = arr.map(f => String(f.eser_id || (f.eser && f.eser.id) || f.id));
+          // Sync with local Store
+          const stored = global.Store.Favorites.list().map(String);
+          if (JSON.stringify(stored.sort()) !== JSON.stringify(ids.sort())) {
+            localStorage.setItem('tcg.favorites', JSON.stringify(ids));
+            global.Store.emit('favorites', ids);
+          }
+          return ids.map(Number);
+        } catch (e) {
+          console.warn('api.favorites.list failed', e);
+          return global.Store.Favorites.list().map(Number);
+        }
       },
       async listFull() {
-        const data = await global.Api.get('/favoriler');
-        const arr = (data && data.favoriler) || (Array.isArray(data) ? data : []);
-        return arr.map(mapFavori);
+        try {
+          const data = await global.Api.get('/favoriler');
+          const arr = (data && data.favoriler) || (Array.isArray(data) ? data : []);
+          const ids = arr.map(f => String(f.eser_id || (f.eser && f.eser.id) || f.id));
+          // Sync with local Store
+          const stored = global.Store.Favorites.list().map(String);
+          if (JSON.stringify(stored.sort()) !== JSON.stringify(ids.sort())) {
+            localStorage.setItem('tcg.favorites', JSON.stringify(ids));
+            global.Store.emit('favorites', ids);
+          }
+          return arr.map(mapFavori);
+        } catch (e) {
+          console.warn('api.favorites.listFull failed', e);
+          // Fallback to local store
+          const storedIds = global.Store.Favorites.list();
+          return storedIds.map(id => ({ id: Number(id) }));
+        }
       },
       async has(id) {
         const ids = await api.favorites.list();

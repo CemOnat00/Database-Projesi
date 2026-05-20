@@ -166,11 +166,13 @@ type DestekTalebiOlusturIstegi struct {
 }
 
 type DestekTalebiDTO struct {
-	ID              uint      `json:"id"`
-	Konu            string    `json:"konu"`
-	Mesaj           string    `json:"mesaj"`
-	Durum           string    `json:"durum"`
-	OlusturmaTarihi time.Time `json:"olusturma_tarihi"`
+	ID              uint          `json:"id"`
+	KullaniciID     uint          `json:"kullanici_id,omitempty"`
+	Kullanici       *KullaniciDTO `json:"kullanici,omitempty"`
+	Konu            string        `json:"konu"`
+	Mesaj           string        `json:"mesaj"`
+	Durum           string        `json:"durum"`
+	OlusturmaTarihi time.Time     `json:"olusturma_tarihi"`
 }
 
 // ── Kampanya ──────────────────────────────────────────────────────────────────

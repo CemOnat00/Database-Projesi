@@ -164,10 +164,12 @@
 
         <div data-pane="security" class="pane hidden">
           <h2 class="font-display text-3xl text-ink-strong mb-6">Security</h2>
-          <form id="security-form" class="bg-surface border border-line p-8 grid md:grid-cols-2 gap-6">
-            <div class="md:col-span-2"><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Current Password</label><input type="password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
-            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">New Password</label><input type="password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
-            <div><label class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Confirm Password</label><input type="password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+          <form id="security-form" autocomplete="off" class="bg-surface border border-line p-8 grid md:grid-cols-2 gap-6">
+            <!-- Visually hidden username field for password managers to associate the credential -->
+            <input type="text" name="username" autocomplete="username" style="position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; pointer-events: none;" readonly />
+            <div class="md:col-span-2"><label for="current-password" class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Current Password</label><input id="current-password" name="current_password" type="password" required autocomplete="current-password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label for="new-password" class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">New Password</label><input id="new-password" name="new_password" type="password" required minlength="6" autocomplete="new-password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
+            <div><label for="confirm-password" class="block text-[11px] uppercase tracking-lux text-ink-muted mb-2">Confirm Password</label><input id="confirm-password" name="confirm_password" type="password" required minlength="6" autocomplete="new-password" class="w-full bg-transparent border-b border-line pb-2 focus:outline-none focus:border-brand" /></div>
             <div class="md:col-span-2"><button type="submit" class="bg-brand hover:bg-brand-hover text-white px-8 py-3 text-[11px] uppercase tracking-lux">Update Password</button></div>
           </form>
         </div>

@@ -16,7 +16,11 @@
     bindFilters();
     await Promise.all([loadArtworks(), loadFavoritesIfAuthed()]);
     render();
-    Store.subscribe('favorites', render); // local sync (e.g., toggled elsewhere)
+    Store.subscribe('favorites', (list) => {
+      const ids = Array.isArray(list) ? list.map(Number) : Store.Favorites.list().map(Number);
+      favoriteIds = new Set(ids);
+      render();
+    });
   });
 
   async function loadArtworks() {

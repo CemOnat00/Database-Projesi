@@ -958,12 +958,17 @@ func (s *DestekServiceImpl) Listele(kullaniciID uint) ([]*dto.DestekTalebiDTO, e
 var _ domainsvc.DestekMesajService = (*DestekMesajServiceImpl)(nil)
 
 type DestekMesajServiceImpl struct {
-	repo       domainrepo.DestekMesajRepository
-	destekRepo domainrepo.DestekRepository
+	repo          domainrepo.DestekMesajRepository
+	destekRepo    domainrepo.DestekRepository
+	kullaniciRepo domainrepo.KullaniciRepository
 }
 
-func NewDestekMesajService(repo domainrepo.DestekMesajRepository, destekRepo domainrepo.DestekRepository) domainsvc.DestekMesajService {
-	return &DestekMesajServiceImpl{repo, destekRepo}
+func NewDestekMesajService(
+	repo domainrepo.DestekMesajRepository,
+	destekRepo domainrepo.DestekRepository,
+	kullaniciRepo domainrepo.KullaniciRepository,
+) domainsvc.DestekMesajService {
+	return &DestekMesajServiceImpl{repo, destekRepo, kullaniciRepo}
 }
 
 func (s *DestekMesajServiceImpl) MesajGonder(kullaniciID, talepID uint, req *dto.DestekMesajGonderIstegi) (*dto.DestekMesajDTO, error) {
@@ -973,11 +978,18 @@ func (s *DestekMesajServiceImpl) MesajGonder(kullaniciID, talepID uint, req *dto
 		return nil, err
 	}
 
+	// Gönderenin rolünü kontrol et
+	gonderenTipi := "kullanici"
+	user, err := s.kullaniciRepo.IDileGetir(kullaniciID)
+	if err == nil && user != nil && user.Rol == "admin" {
+		gonderenTipi = "admin"
+	}
+
 	mesaj := &entity.DestekMesaj{
 		TalepID:      talepID,
 		GonderenID:   kullaniciID,
 		Mesaj:        req.Mesaj,
-		GonderenTipi: "kullanici",
+		GonderenTipi: gonderenTipi,
 	}
 
 	if err := s.repo.Gonder(mesaj); err != nil {
@@ -1285,8 +1297,9 @@ func (s *AdminServiceImpl) TumDestekTaleplerini() ([]*dto.DestekTalebiDTO, error
 	}
 	result := make([]*dto.DestekTalebiDTO, 0, len(liste))
 	for _, d := range liste {
+		uDTO := kullaniciDTO(&d.Kullanici)
 		result = append(result, &dto.DestekTalebiDTO{
-			ID: d.ID, Konu: d.Konu, Mesaj: d.Mesaj,
+			ID: d.ID, KullaniciID: d.KullaniciID, Kullanici: &uDTO, Konu: d.Konu, Mesaj: d.Mesaj,
 			Durum: d.Durum, OlusturmaTarihi: d.OlusturmaTarihi,
 		})
 	}

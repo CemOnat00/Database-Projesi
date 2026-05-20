@@ -51,7 +51,7 @@ func main() {
 	favoriSvc := infrasvc.NewFavoriService(favoriRepo, eserRepo)
 	yorumSvc := infrasvc.NewYorumService(yorumRepo, rezervasyonRepo, siparisRepo)
 	destekSvc := infrasvc.NewDestekService(destekRepo)
-	destekMesajSvc := infrasvc.NewDestekMesajService(destekMesajRepo, destekRepo)
+	destekMesajSvc := infrasvc.NewDestekMesajService(destekMesajRepo, destekRepo, kullaniciRepo)
 	karsilastirmaSvc := infrasvc.NewKarsilastirmaService(eserRepo, etkinlikRepo, karsilastirmaRepo)
 	istatistikSvc := infrasvc.NewIstatistikService(db)
 	kampanyaSvc := infrasvc.NewKampanyaService(db, kuponRepo)
