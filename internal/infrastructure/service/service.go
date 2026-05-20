@@ -709,7 +709,7 @@ func (s *SiparisServiceImpl) Olustur(kullaniciID uint, req *dto.SiparisOlusturIs
 
 	siparis := &entity.Siparis{
 		KullaniciID: kullaniciID, ToplamTutar: toplam,
-		OdemYontemi: req.OdemYontemi, Durum: "beklemede", Detaylar: detaylar,
+		OdemYontemi: req.OdemYontemi, Durum: "odeme_bekleniyor", Detaylar: detaylar,
 	}
 	if err := s.repo.Olustur(siparis); err != nil {
 		return nil, err
@@ -906,6 +906,13 @@ func (s *YorumServiceImpl) YanitEkle(yoneticiID, yorumID uint, req *dto.YanitEkl
 	return s.repo.YanitEkle(&entity.YorumYaniti{
 		YorumID: yorumID, YoneticiID: yoneticiID, YanitMetni: req.YanitMetni,
 	})
+}
+
+func (s *YorumServiceImpl) Sil(yorumID uint) error {
+	if _, err := s.repo.IDileGetir(yorumID); err != nil {
+		return err
+	}
+	return s.repo.Sil(yorumID)
 }
 
 // ── Destek Service ────────────────────────────────────────────────────────────

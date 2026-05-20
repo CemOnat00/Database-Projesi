@@ -116,7 +116,7 @@ type Siparis struct {
 	KuponID         *uint     `gorm:"column:kupon_id"                        json:"kupon_id"`
 	ToplamTutar     float64   `gorm:"column:toplam_tutar;type:numeric(10,2)" json:"toplam_tutar"`
 	OdemYontemi     string    `gorm:"column:odeme_yontemi"                   json:"odeme_yontemi"`
-	Durum           string    `gorm:"column:durum;default:'beklemede'"       json:"durum"`
+	Durum           string    `gorm:"column:durum;default:'odeme_bekleniyor'" json:"durum"`
 	OlusturmaTarihi time.Time `gorm:"column:olusturma_tarihi;autoCreateTime" json:"olusturma_tarihi"`
 
 	// İlişkiler

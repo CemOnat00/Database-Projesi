@@ -226,6 +226,7 @@
       Utils.qs('#submit-label').textContent = 'Saving…';
 
       try {
+        let result;
         if (editingId) {
           for (const gid of removedExistingIds) {
             if (gid != null) {
@@ -233,14 +234,20 @@
               catch (err) { console.warn('gorselSil failed', gid, err); }
             }
           }
-          await GALLERY.api.adminEtkinlik.guncelle(editingId, payload, newFiles, Math.max(0, primaryIndex));
+          result = await GALLERY.api.adminEtkinlik.guncelle(editingId, payload, newFiles, Math.max(0, primaryIndex));
         } else {
-          await GALLERY.api.adminEtkinlik.olustur(payload, newFiles, Math.max(0, primaryIndex));
+          result = await GALLERY.api.adminEtkinlik.olustur(payload, newFiles, Math.max(0, primaryIndex));
         }
 
-        Utils.toast(editingId ? 'Workshop updated' : 'Workshop created');
-        showMsg(msg, (editingId ? 'Updated' : 'Saved') + ' — returning to list…', 'brand');
-        setTimeout(() => location.href = 'workshops.html', 800);
+        // Etkinlik kaydedildi; görsel yüklemesi ayrı adım — başarısızsa net uyarı.
+        if (result && result.gorselUyari) {
+          Utils.toast('Saved — but images failed to upload');
+          showMsg(msg, (editingId ? 'Updated' : 'Saved') + ', but image upload failed — returning to list…', 'accent');
+        } else {
+          Utils.toast(editingId ? 'Workshop updated' : 'Workshop created');
+          showMsg(msg, (editingId ? 'Updated' : 'Saved') + ' — returning to list…', 'brand');
+        }
+        setTimeout(() => location.href = 'workshops.html', 1100);
       } catch (err) {
         showMsg(msg, err.message || 'Could not save', 'accent');
         btn.disabled = false;

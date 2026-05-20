@@ -131,8 +131,9 @@ func Kur(
 			// Rapor
 			admin.GET("/rapor", istatistikH.AdminRapor)
 
-			// Yorum yanıtlama
+			// Yorum yanıtlama + moderasyon
 			admin.POST("/yorumlar/:id/yanit", yorumH.YanitEkle)
+			admin.DELETE("/yorumlar/:id", yorumH.Sil)
 
 			// Eser CRUD
 			admin.POST("/eserler", eserH.Olustur)

@@ -61,4 +61,25 @@ func migrate(db *gorm.DB) {
 		log.Fatalf("❌ Migration başarısız: %v", err)
 	}
 	log.Println("✅ Migration tamamlandı")
+
+	// Mevcut 'beklemede' durumundaki siparişleri 'odeme_bekleniyor' durumuna geçir
+	if err := db.Model(&entity.Siparis{}).Where("durum = ?", "beklemede").Update("durum", "odeme_bekleniyor").Error; err != nil {
+		log.Printf("⚠️ Mevcut siparişlerin durumu güncellenemedi: %v", err)
+	} else {
+		log.Println("✅ Mevcut beklemedeki siparişler 'odeme_bekleniyor' yapıldı")
+	}
+
+	// Yinelenen yorum yanıtlarını temizle (her yorum için en son eklenen yanıtı koru)
+	if err := db.Exec(`
+		DELETE FROM yorum_yanitlari
+		WHERE id NOT IN (
+			SELECT DISTINCT ON (yorum_id) id
+			FROM yorum_yanitlari
+			ORDER BY yorum_id, id DESC
+		)
+	`).Error; err != nil {
+		log.Printf("⚠️ Yinelenen yorum yanıtları temizlenemedi: %v", err)
+	} else {
+		log.Println("✅ Yinelenen yorum yanıtları temizlendi")
+	}
 }

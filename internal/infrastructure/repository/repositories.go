@@ -518,8 +518,37 @@ func (r *GormYorumRepo) PuanVer(yorumID, kullaniciID uint, puan int) error {
 }
 
 func (r *GormYorumRepo) YanitEkle(yanit *entity.YorumYaniti) error {
+	var mevcut entity.YorumYaniti
+	err := r.db.Where("yorum_id = ?", yanit.YorumID).First(&mevcut).Error
+	if err == nil {
+		// Update existing reply
+		mevcut.YanitMetni = yanit.YanitMetni
+		mevcut.YoneticiID = yanit.YoneticiID
+		if err := r.db.Save(&mevcut).Error; err != nil {
+			return apperror.Internal("yanıt güncellenemedi", err)
+		}
+		return nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return apperror.Internal("veritabanı hatası", err)
+	}
+
+	// Create new reply
 	if err := r.db.Create(yanit).Error; err != nil {
 		return apperror.Internal("yanıt eklenemedi", err)
+	}
+	return nil
+}
+
+// Sil — yorumu ve ona bağlı küratör yanıtlarını tek bir transaction içinde siler.
+func (r *GormYorumRepo) Sil(id uint) error {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		if e := tx.Where("yorum_id = ?", id).Delete(&entity.YorumYaniti{}).Error; e != nil {
+			return e
+		}
+		return tx.Delete(&entity.Yorum{}, id).Error
+	})
+	if err != nil {
+		return apperror.Internal("yorum silinemedi", err)
 	}
 	return nil
 }

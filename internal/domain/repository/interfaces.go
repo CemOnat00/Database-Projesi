@@ -77,6 +77,7 @@ type YorumRepository interface {
 	FaydaliBul(yorumID uint) error
 	PuanVer(yorumID, kullaniciID uint, puan int) error
 	YanitEkle(yanit *entity.YorumYaniti) error
+	Sil(id uint) error
 }
 
 type KuponRepository interface {

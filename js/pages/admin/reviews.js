@@ -78,7 +78,10 @@
           ${hasReply ? `<div class="bg-bg-soft border-l-2 border-brand p-3 mb-4"><p class="text-[10px] uppercase tracking-lux text-ink-muted mb-1">Current Reply</p><p class="text-sm text-ink-strong">${Utils.escapeHTML(y.reply)}</p></div>` : ''}
           <div>
             <textarea class="admin-reply-input w-full border border-line p-3 text-sm bg-transparent focus:outline-none focus:border-brand resize-none" rows="2" placeholder="Write a curator's response…"></textarea>
-            <button type="button" class="admin-reply-save mt-2 bg-brand hover:bg-brand-hover text-white px-5 py-2.5 text-[11px] uppercase tracking-lux transition-colors" data-review-id="${y.id}">${hasReply ? 'Replace Reply' : 'Post Reply'}</button>
+            <div class="mt-2 flex items-center justify-between gap-3">
+              <button type="button" class="admin-reply-save bg-brand hover:bg-brand-hover text-white px-5 py-2.5 text-[11px] uppercase tracking-lux transition-colors" data-review-id="${y.id}">${hasReply ? 'Replace Reply' : 'Post Reply'}</button>
+              <button type="button" class="admin-review-delete text-[11px] uppercase tracking-lux text-accent border-b border-accent/40 hover:border-accent pb-0.5" data-review-id="${y.id}">Delete Review</button>
+            </div>
           </div>
         </div>`;
     }).join('');
@@ -98,6 +101,22 @@
         } catch (e) {
           Utils.toast(e.message || 'Could not save reply');
           btn.disabled = false; btn.textContent = 'Post Reply';
+        }
+      });
+    });
+
+    Utils.qsa('.admin-review-delete', root).forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const reviewId = Number(btn.getAttribute('data-review-id'));
+        if (!confirm('Delete this review? This permanently removes the review and any curator reply.')) return;
+        btn.disabled = true; btn.textContent = 'Deleting…';
+        try {
+          await GALLERY.api.deleteReview(reviewId);
+          Utils.toast('Review deleted');
+          renderReviewsManagement();
+        } catch (e) {
+          Utils.toast(e.message || 'Could not delete review');
+          btn.disabled = false; btn.textContent = 'Delete Review';
         }
       });
     });

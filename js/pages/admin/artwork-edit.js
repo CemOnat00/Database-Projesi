@@ -253,6 +253,7 @@
       Utils.qs('#submit-label').textContent = 'Saving…';
 
       try {
+        let result;
         if (editingId) {
           // 1) kaldırılan mevcut görselleri sil
           for (const gid of removedExistingIds) {
@@ -262,14 +263,21 @@
             }
           }
           // 2) eseri güncelle + yeni dosyaları yükle
-          await GALLERY.api.adminEser.guncelle(editingId, payload, newFiles, Math.max(0, primaryIndex));
+          result = await GALLERY.api.adminEser.guncelle(editingId, payload, newFiles, Math.max(0, primaryIndex));
         } else {
-          await GALLERY.api.adminEser.olustur(payload, newFiles, Math.max(0, primaryIndex));
+          result = await GALLERY.api.adminEser.olustur(payload, newFiles, Math.max(0, primaryIndex));
         }
 
-        Utils.toast(editingId ? 'Artwork updated' : 'Artwork created');
-        showMsg(msg, (editingId ? 'Updated' : 'Saved') + ' — returning to list…', 'brand');
-        setTimeout(() => location.href = 'artworks.html', 800);
+        // Eser kaydedildi. Görsel yüklemesi ayrı bir adım — başarısız olsa bile
+        // "kaydedilemedi" demek yanlış olur; net bir uyarı gösterilir.
+        if (result && result.gorselUyari) {
+          Utils.toast('Saved — but images failed to upload');
+          showMsg(msg, (editingId ? 'Updated' : 'Saved') + ', but image upload failed — returning to list…', 'accent');
+        } else {
+          Utils.toast(editingId ? 'Artwork updated' : 'Artwork created');
+          showMsg(msg, (editingId ? 'Updated' : 'Saved') + ' — returning to list…', 'brand');
+        }
+        setTimeout(() => location.href = 'artworks.html', 1100);
       } catch (err) {
         showMsg(msg, err.message || 'Could not save', 'accent');
         btn.disabled = false;

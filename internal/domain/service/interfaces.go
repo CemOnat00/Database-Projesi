@@ -72,6 +72,7 @@ type YorumService interface {
 	FaydaliBul(yorumID uint) error
 	PuanVer(yorumID, kullaniciID uint, req *dto.YorumPuanIstegi) error
 	YanitEkle(yoneticiID, yorumID uint, req *dto.YanitEkleIstegi) error
+	Sil(yorumID uint) error
 }
 
 type DestekService interface {

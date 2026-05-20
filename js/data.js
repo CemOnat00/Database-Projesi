@@ -247,6 +247,7 @@
     if (!s) return '—';
     const map = {
       'beklemede': 'Pending',
+      'odeme_bekleniyor': 'Ödeme Bekliyor',
       'onaylandi': 'Confirmed',
       'tamamlandi': 'Completed',
       'iptal': 'Cancelled',
@@ -476,6 +477,11 @@
       await global.Api.post('/admin/yorumlar/' + Number(reviewId) + '/yanit', { yanit_metni: text });
       return { ok: true };
     },
+    async deleteReview(reviewId) {
+      // Admin moderasyonu — yorumu (ve yanıtlarını) kaldırır
+      await global.Api.del('/admin/yorumlar/' + Number(reviewId));
+      return { ok: true };
+    },
 
     /* ---- Support ---- */
     async listSupportTickets() {
@@ -577,19 +583,26 @@
       // olustur — JSON ile eser oluşturur, ardından files varsa
       // multipart ile görselleri yükler (eser ID'si dosya klasörü için gerekli).
       async olustur(payload, files, primaryIndex) {
+        // 1) eseri oluştur — bu adım başarısız olursa hata fırlatılır.
         const eser = await global.Api.post('/admin/eserler', payload);
         const eserID = eser && eser.id;
+        // 2) görselleri yükle — eser zaten kaydedildiği için buradaki hata
+        //    "kaydedilemedi" gibi yanlış bir mesaja yol açmamalı; uyarı olarak döner.
+        let gorselUyari = null;
         if (eserID && files && files.length) {
-          await api.adminEser.gorselYukle(eserID, files, primaryIndex || 0);
+          try { await api.adminEser.gorselYukle(eserID, files, primaryIndex || 0); }
+          catch (e) { gorselUyari = (e && e.message) || 'Görseller yüklenemedi'; }
         }
-        return { ok: true, eser };
+        return { ok: true, eser, gorselUyari };
       },
       async guncelle(id, patch, files, primaryIndex) {
         const eser = await global.Api.put('/admin/eserler/' + id, patch);
+        let gorselUyari = null;
         if (files && files.length) {
-          await api.adminEser.gorselYukle(id, files, primaryIndex || 0);
+          try { await api.adminEser.gorselYukle(id, files, primaryIndex || 0); }
+          catch (e) { gorselUyari = (e && e.message) || 'Görseller yüklenemedi'; }
         }
-        return { ok: true, eser };
+        return { ok: true, eser, gorselUyari };
       },
       async sil(id) {
         await global.Api.del('/admin/eserler/' + id);
@@ -612,17 +625,21 @@
       async olustur(payload, files, primaryIndex) {
         const etkinlik = await global.Api.post('/admin/etkinlikler', payload);
         const etkinlikID = etkinlik && etkinlik.id;
+        let gorselUyari = null;
         if (etkinlikID && files && files.length) {
-          await api.adminEtkinlik.gorselYukle(etkinlikID, files, primaryIndex || 0);
+          try { await api.adminEtkinlik.gorselYukle(etkinlikID, files, primaryIndex || 0); }
+          catch (e) { gorselUyari = (e && e.message) || 'Görseller yüklenemedi'; }
         }
-        return { ok: true, etkinlik };
+        return { ok: true, etkinlik, gorselUyari };
       },
       async guncelle(id, patch, files, primaryIndex) {
         const etkinlik = await global.Api.put('/admin/etkinlikler/' + id, patch);
+        let gorselUyari = null;
         if (files && files.length) {
-          await api.adminEtkinlik.gorselYukle(id, files, primaryIndex || 0);
+          try { await api.adminEtkinlik.gorselYukle(id, files, primaryIndex || 0); }
+          catch (e) { gorselUyari = (e && e.message) || 'Görseller yüklenemedi'; }
         }
-        return { ok: true, etkinlik };
+        return { ok: true, etkinlik, gorselUyari };
       },
       async sil(id) {
         await global.Api.del('/admin/etkinlikler/' + id);

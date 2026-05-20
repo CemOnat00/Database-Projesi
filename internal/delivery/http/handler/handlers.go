@@ -670,6 +670,20 @@ func (h *YorumHandler) YanitEkle(c *gin.Context) {
 	response.Created(c, "yanıt eklendi", nil)
 }
 
+// Sil — bir yorumu kaldırır (admin moderasyonu).
+func (h *YorumHandler) Sil(c *gin.Context) {
+	yorumID, err := paramID(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if err := h.svc.Sil(yorumID); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.OK(c, "yorum silindi", nil)
+}
+
 // ── Destek Handler ────────────────────────────────────────────────────────────
 
 type DestekHandler struct{ svc domainsvc.DestekService }
